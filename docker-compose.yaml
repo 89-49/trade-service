@@ -1,0 +1,19 @@
+services:
+  gateway-server:
+    container_name: trade-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "19020:19020"
+    environment:
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+      - EUREKA_SERVER=${EUREKA_SERVER}
+    networks:
+      - pgsg-network
+
+networks:
+  pgsg-network:
+    external: true

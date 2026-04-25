@@ -11,6 +11,7 @@ import org.pgsg.trade.domain.exception.TradeDomainValidationException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 @DisplayName("Trade 도메인 - CancelReasonType Enum 단위 테스트")
 class CancelReasonTypeTest {
@@ -37,32 +38,47 @@ class CancelReasonTypeTest {
 
     @Test
     @DisplayName("성공: 공통 사유(CHANGE_OF_MIND)는 판매자와 구매자 모두에게 허용된다.")
-    void allowedFor_CommonReason_ReturnsTrue() {
-        assertThat(CancelReasonType.CHANGE_OF_MIND.allowedFor(CancellerType.SELLER)).isTrue();
-        assertThat(CancelReasonType.CHANGE_OF_MIND.allowedFor(CancellerType.BUYER)).isTrue();
-        assertThat(CancelReasonType.CHANGE_OF_MIND.allowedFor(CancellerType.SYSTEM)).isFalse();
+    void allowedFor_CommonReason_Validation() {
+        CancelReasonType reason = CancelReasonType.CHANGE_OF_MIND;
+
+        assertAll(
+                () -> assertThat(reason.allowedFor(CancellerType.SELLER)).as("판매자는 허용").isTrue(),
+                () -> assertThat(reason.allowedFor(CancellerType.BUYER)).as("구매자는 허용").isTrue(),
+                () -> assertThat(reason.allowedFor(CancellerType.SYSTEM)).as("시스템은 차단").isFalse()
+        );
     }
 
     @Test
     @DisplayName("성공: 판매자 전용 사유(PRODUCT_ISSUE)는 판매자에게만 허용된다.")
-    void allowedFor_SellerOnlyReason_ReturnsTrue() {
-        assertThat(CancelReasonType.PRODUCT_ISSUE.allowedFor(CancellerType.SELLER)).isTrue();
-        assertThat(CancelReasonType.PRODUCT_ISSUE.allowedFor(CancellerType.BUYER)).isFalse();
-        assertThat(CancelReasonType.PRODUCT_ISSUE.allowedFor(CancellerType.SYSTEM)).isFalse();
+    void allowedFor_SellerOnlyReason_Validation() {
+        CancelReasonType reason = CancelReasonType.PRODUCT_ISSUE;
+
+        assertAll(
+                () -> assertThat(reason.allowedFor(CancellerType.SELLER)).as("판매자는 허용").isTrue(),
+                () -> assertThat(reason.allowedFor(CancellerType.BUYER)).as("구매자는 차단").isFalse(),
+                () -> assertThat(reason.allowedFor(CancellerType.SYSTEM)).as("시스템은 차단").isFalse()
+        );
     }
 
     @Test
     @DisplayName("성공: 구매자 전용 사유(REFUND_REQUEST)는 구매자에게만 허용된다.")
-    void allowedFor_BuyerOnlyReason_ReturnsTrue() {
-        assertThat(CancelReasonType.REFUND_REQUEST.allowedFor(CancellerType.BUYER)).isTrue();
-        assertThat(CancelReasonType.REFUND_REQUEST.allowedFor(CancellerType.SELLER)).isFalse();
+    void allowedFor_BuyerOnlyReason_Validation() {
+        CancelReasonType reason = CancelReasonType.REFUND_REQUEST;
+
+        assertAll(
+                () -> assertThat(reason.allowedFor(CancellerType.BUYER)).as("구매자는 허용").isTrue(),
+                () -> assertThat(reason.allowedFor(CancellerType.SELLER)).as("판매자는 차단").isFalse(),
+                () -> assertThat(reason.allowedFor(CancellerType.SYSTEM)).as("시스템은 차단").isFalse()
+        );
     }
 
     @ParameterizedTest
     @EnumSource(value = CancellerType.class, names = {"SELLER", "BUYER"})
     @DisplayName("성공: 시스템 전용 사유(POLICY_VIOLATION)는 일반 사용자에게 허용되지 않는다.")
     void allowedFor_SystemReason_ReturnsFalseForUsers(CancellerType userType) {
-        assertThat(CancelReasonType.POLICY_VIOLATION.allowedFor(userType)).isFalse();
-        assertThat(CancelReasonType.POLICY_VIOLATION.allowedFor(CancellerType.SYSTEM)).isTrue();
+        assertAll(
+                () -> assertThat(CancelReasonType.POLICY_VIOLATION.allowedFor(userType)).as("일반 사용자는 차단").isFalse(),
+                () -> assertThat(CancelReasonType.POLICY_VIOLATION.allowedFor(CancellerType.SYSTEM)).as("시스템은 허용").isTrue()
+        );
     }
 }

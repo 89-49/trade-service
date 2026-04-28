@@ -51,6 +51,8 @@ class HexagonalArchitecture {
     }
 
     void check(JavaClasses classes) {
+        validateRequiredConfiguration();
+
         List<ArchRule> rules = List.of(
                 domainShouldNotDependOnApplicationAdaptersOrPresentation(),
                 applicationShouldNotDependOnAdaptersOrPresentation(),
@@ -122,15 +124,18 @@ class HexagonalArchitecture {
     }
 
     private String layerPackage(String layer) {
-        return basePackage + "." + layer + "..";
+        validatePackageName(layer, "layer package");
+        return validatePackagePattern(basePackage + "." + layer + "..", "layer package");
     }
 
     private String applicationPackage(String packageName) {
-        return basePackage + "." + applicationLayer + "." + packageName + "..";
+        validatePackageName(packageName, "application package");
+        return validatePackagePattern(basePackage + "." + applicationLayer + "." + packageName + "..",
+                "application package");
     }
 
     private String configurationPackage() {
-        return basePackage + "." + configurationLayer + "..";
+        return validatePackagePattern(basePackage + "." + configurationLayer + "..", "configuration package");
     }
 
     private String[] incomingAdapterPackages() {
@@ -149,15 +154,17 @@ class HexagonalArchitecture {
 
     private String[] allowedAccessPackages(String ownPackage, Object... packageGroups) {
         List<String> packages = new ArrayList<>();
-        packages.add(ownPackage);
+        packages.add(validatePackagePattern(ownPackage, "allowed access package"));
 
         for (Object packageGroup : packageGroups) {
             if (packageGroup instanceof String packageName) {
-                packages.add(packageName);
+                packages.add(validatePackagePattern(packageName, "allowed access package"));
             }
 
             if (packageGroup instanceof String[] packageNames) {
-                packages.addAll(List.of(packageNames));
+                packages.addAll(List.of(packageNames).stream()
+                        .map(packageName -> validatePackagePattern(packageName, "allowed access package"))
+                        .toList());
             }
         }
 
@@ -169,15 +176,58 @@ class HexagonalArchitecture {
 
         for (Object packageGroup : packageGroups) {
             if (packageGroup instanceof String packageName) {
-                packages.add(packageName);
+                packages.add(validatePackagePattern(packageName, "rule package"));
             }
 
             if (packageGroup instanceof String[] packageNames) {
-                packages.addAll(List.of(packageNames));
+                packages.addAll(List.of(packageNames).stream()
+                        .map(packageName -> validatePackagePattern(packageName, "rule package"))
+                        .toList());
             }
         }
 
         return packages.toArray(String[]::new);
+    }
+
+    private void validateRequiredConfiguration() {
+        validatePackageName(basePackage, "boundedContext");
+        validatePackageName(domainLayer, "domain layer");
+        validatePackageName(applicationLayer, "application layer");
+        validatePackageName(configurationLayer, "configuration layer");
+        validatePackageName(services, "application services");
+        validatePackageName(incomingPorts, "incoming ports");
+        validatePackageName(outgoingPorts, "outgoing ports");
+        validatePackageNames(adapterLayers, "adapter layers");
+        validatePackageNames(incomingAdapters, "incoming adapters");
+        validatePackageNames(outgoingAdapters, "outgoing adapters");
+    }
+
+    private void validatePackageNames(List<String> packageNames, String configurationName) {
+        if (packageNames.isEmpty()) {
+            throw new IllegalStateException("Missing architecture configuration: " + configurationName);
+        }
+
+        packageNames.forEach(packageName -> validatePackagePattern(packageName, configurationName));
+    }
+
+    private String validatePackageName(String packageName, String configurationName) {
+        if (isInvalidPackageName(packageName)) {
+            throw new IllegalStateException("Missing architecture configuration: " + configurationName);
+        }
+
+        return packageName;
+    }
+
+    private String validatePackagePattern(String packagePattern, String configurationName) {
+        if (isInvalidPackageName(packagePattern) || packagePattern.contains(".null.")) {
+            throw new IllegalStateException("Invalid architecture package configuration: " + configurationName);
+        }
+
+        return packagePattern;
+    }
+
+    private boolean isInvalidPackageName(String packageName) {
+        return packageName == null || packageName.isBlank() || "null".equals(packageName);
     }
 
     static class AdaptersLayer {
@@ -191,12 +241,20 @@ class HexagonalArchitecture {
         }
 
         AdaptersLayer incoming(String packageName) {
-            architecture.incomingAdapters.add(architecture.basePackage + "." + adapterLayer + "." + packageName + "..");
+            architecture.validatePackageName(packageName, "incoming adapter");
+            architecture.incomingAdapters.add(architecture.validatePackagePattern(
+                    architecture.basePackage + "." + adapterLayer + "." + packageName + "..",
+                    "incoming adapter"
+            ));
             return this;
         }
 
         AdaptersLayer outgoing(String packageName) {
-            architecture.outgoingAdapters.add(architecture.basePackage + "." + adapterLayer + "." + packageName + "..");
+            architecture.validatePackageName(packageName, "outgoing adapter");
+            architecture.outgoingAdapters.add(architecture.validatePackagePattern(
+                    architecture.basePackage + "." + adapterLayer + "." + packageName + "..",
+                    "outgoing adapter"
+            ));
             return this;
         }
 

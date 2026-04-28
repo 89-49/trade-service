@@ -41,7 +41,7 @@ class TradeTest {
         assertThat(trade.getBuyerStatus()).isNull();
         assertThat(trade.getSellerStatus()).isNull();
 
-        assertThat(trade.getVersion()).isZero();
+        assertThat(trade.getVersion()).isNull();
     }
 
     @Test

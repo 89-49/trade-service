@@ -55,7 +55,7 @@ public class Trade {
     private LocalDateTime updatedAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Trade(UUID id, UUID reservationId, TradeStatus status, TradeParticipants participants, TradedItem tradedItem, String buyerStatus, String sellerStatus, Integer version, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    private Trade(UUID id, UUID reservationId, TradeStatus status, TradeParticipants participants, TradedItem tradedItem, String buyerStatus, String sellerStatus, LocalDateTime createdAt, LocalDateTime updatedAt) {
         validateReservationId(reservationId);
         validateParticipants(participants);
         validateTradedItem(tradedItem);
@@ -67,7 +67,6 @@ public class Trade {
         this.tradedItem = tradedItem;
         this.buyerStatus = buyerStatus;
         this.sellerStatus = sellerStatus;
-        this.version = version;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -79,7 +78,6 @@ public class Trade {
                 .participants(participants)
                 .tradedItem(tradedItem)
                 .status(TradeStatus.TRADING)
-                .version(0)
                 .build();
     }
 

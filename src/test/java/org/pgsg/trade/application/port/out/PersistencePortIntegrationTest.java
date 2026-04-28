@@ -38,7 +38,7 @@ class PersistencePortIntegrationTest {
     private TradeHistoryPersistencePort tradeHistoryPersistencePort;
 
     @Test
-    @DisplayName("TradePersistencePort를 실행하면 거래가 DB에 저장되고 조회된다.")
+    @DisplayName("성공: TradePersistencePort를 실행하면 거래가 DB에 저장되고 조회된다.")
     void tradePersistencePort_SaveAndFind() {
         // given
         Trade trade = createTrade();
@@ -61,7 +61,7 @@ class PersistencePortIntegrationTest {
     }
 
     @Test
-    @DisplayName("TradeHistoryPersistencePort를 실행하면 거래 이력이 DB에 저장되고 조회된다.")
+    @DisplayName("성공: TradeHistoryPersistencePort를 실행하면 거래 이력이 DB에 저장되고 조회된다.")
     void tradeHistoryPersistencePort_SaveAndFindAllByTradeId() {
         // given
         UUID tradeId = UUID.randomUUID();

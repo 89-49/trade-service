@@ -31,7 +31,7 @@ class TradePersistenceAdapterTest {
     private TradePersistenceAdapter adapter;
 
     @Test
-    @DisplayName("save 호출 시 TradeJpaRepository에 저장을 위임한다.")
+    @DisplayName("성공: save 호출 시 TradeJpaRepository에 저장을 위임한다.")
     void save_DelegatesToJpaRepository() {
         // given
         Trade trade = createTrade();
@@ -48,7 +48,7 @@ class TradePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findById 호출 시 TradeJpaRepository에 조회를 위임한다.")
+    @DisplayName("성공: findById 호출 시 TradeJpaRepository에 조회를 위임한다.")
     void findById_DelegatesToJpaRepository() {
         // given
         Trade trade = createTrade();
@@ -66,7 +66,7 @@ class TradePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findByReservationId 호출 시 TradeJpaRepository에 조회를 위임한다.")
+    @DisplayName("성공: findByReservationId 호출 시 TradeJpaRepository에 조회를 위임한다.")
     void findByReservationId_DelegatesToJpaRepository() {
         // given
         Trade trade = createTrade();
@@ -84,7 +84,7 @@ class TradePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("existsByReservationId 호출 시 TradeJpaRepository에 존재 여부 확인을 위임한다.")
+    @DisplayName("성공: existsByReservationId 호출 시 TradeJpaRepository에 존재 여부 확인을 위임한다.")
     void existsByReservationId_DelegatesToJpaRepository() {
         // given
         UUID reservationId = UUID.randomUUID();

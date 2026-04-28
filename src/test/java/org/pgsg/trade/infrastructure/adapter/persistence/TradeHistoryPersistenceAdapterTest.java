@@ -29,7 +29,7 @@ class TradeHistoryPersistenceAdapterTest {
     private TradeHistoryPersistenceAdapter adapter;
 
     @Test
-    @DisplayName("save 호출 시 TradeHistoryJpaRepository에 저장을 위임한다.")
+    @DisplayName("성공: save 호출 시 TradeHistoryJpaRepository에 저장을 위임한다.")
     void save_DelegatesToJpaRepository() {
         // given
         TradeHistory tradeHistory = createTradeHistory();
@@ -46,7 +46,7 @@ class TradeHistoryPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findAllByTradeId 호출 시 생성일 오름차순 JPA 조회 메서드에 위임한다.")
+    @DisplayName("성공: findAllByTradeId 호출 시 생성일 오름차순 JPA 조회 메서드에 위임한다.")
     void findAllByTradeId_DelegatesToJpaRepository() {
         // given
         UUID tradeId = UUID.randomUUID();

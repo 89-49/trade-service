@@ -10,7 +10,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 @DisplayName("헥사고날 아키텍처 검증")
 class DependencyRuleTests {
 
-    @DisplayName("Trade 아키텍처 검증")
+    @DisplayName("성공: Trade 아키텍처 의존성 규칙을 만족한다.")
     @Test
     void validateTradeArchitecture() {
         // given & when & then
@@ -38,7 +38,7 @@ class DependencyRuleTests {
                         .importPackages("org.pgsg.trade.."));
     }
 
-    @DisplayName("Domain 계층은 Application 계층에 의존하지 않는다.")
+    @DisplayName("성공: Domain 계층은 Application 계층에 의존하지 않는다.")
     @Test
     void validateDomainDependencies() {
         // given & when & then

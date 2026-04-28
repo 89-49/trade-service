@@ -22,7 +22,7 @@ class TradeServiceTest {
     private TradeHistoryPersistencePort tradeHistoryPersistencePort;
 
     @Test
-    @DisplayName("TradeService는 입력 포트인 TradeUseCase를 구현한다.")
+    @DisplayName("성공: TradeService는 입력 포트인 TradeUseCase를 구현한다.")
     void tradeService_ImplementsTradeUseCase() {
         // given
         TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort);

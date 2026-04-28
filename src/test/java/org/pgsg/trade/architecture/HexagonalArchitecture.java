@@ -13,12 +13,12 @@ class HexagonalArchitecture {
 
     private final String basePackage;
     private String domainLayer;
-    private String adaptersLayer;
     private String applicationLayer;
     private String configurationLayer;
     private String services;
     private String incomingPorts;
     private String outgoingPorts;
+    private final List<String> adapterLayers = new ArrayList<>();
     private final List<String> incomingAdapters = new ArrayList<>();
     private final List<String> outgoingAdapters = new ArrayList<>();
 
@@ -36,8 +36,8 @@ class HexagonalArchitecture {
     }
 
     AdaptersLayer withAdaptersLayer(String packageName) {
-        this.adaptersLayer = packageName;
-        return new AdaptersLayer(this);
+        this.adapterLayers.add(packageName);
+        return new AdaptersLayer(this, packageName);
     }
 
     ApplicationLayer withApplicationLayer(String packageName) {
@@ -68,11 +68,10 @@ class HexagonalArchitecture {
                 .resideInAPackage(layerPackage(domainLayer))
                 .should()
                 .dependOnClassesThat()
-                .resideInAnyPackage(
+                .resideInAnyPackage(packages(
                         layerPackage(applicationLayer),
-                        layerPackage(adaptersLayer),
-                        layerPackage("presentation")
-                );
+                        adapterLayerPackages()
+                ));
     }
 
     private ArchRule applicationShouldNotDependOnAdaptersOrPresentation() {
@@ -81,11 +80,10 @@ class HexagonalArchitecture {
                 .resideInAPackage(layerPackage(applicationLayer))
                 .should()
                 .dependOnClassesThat()
-                .resideInAnyPackage(
-                        layerPackage(adaptersLayer),
-                        layerPackage("infrastructure.persistence"),
-                        layerPackage("presentation")
-                );
+                .resideInAnyPackage(packages(
+                        adapterLayerPackages(),
+                        layerPackage("infrastructure.persistence")
+                ));
     }
 
     private ArchRule servicesShouldOnlyBeAccessedByIncomingAdaptersAndConfiguration() {
@@ -136,14 +134,16 @@ class HexagonalArchitecture {
     }
 
     private String[] incomingAdapterPackages() {
-        return incomingAdapters.stream()
-                .map(adapter -> basePackage + "." + adaptersLayer + "." + adapter + "..")
-                .toArray(String[]::new);
+        return incomingAdapters.toArray(String[]::new);
     }
 
     private String[] outgoingAdapterPackages() {
-        return outgoingAdapters.stream()
-                .map(adapter -> basePackage + "." + adaptersLayer + "." + adapter + "..")
+        return outgoingAdapters.toArray(String[]::new);
+    }
+
+    private String[] adapterLayerPackages() {
+        return adapterLayers.stream()
+                .map(this::layerPackage)
                 .toArray(String[]::new);
     }
 
@@ -164,21 +164,39 @@ class HexagonalArchitecture {
         return packages.toArray(String[]::new);
     }
 
+    private String[] packages(Object... packageGroups) {
+        List<String> packages = new ArrayList<>();
+
+        for (Object packageGroup : packageGroups) {
+            if (packageGroup instanceof String packageName) {
+                packages.add(packageName);
+            }
+
+            if (packageGroup instanceof String[] packageNames) {
+                packages.addAll(List.of(packageNames));
+            }
+        }
+
+        return packages.toArray(String[]::new);
+    }
+
     static class AdaptersLayer {
 
         private final HexagonalArchitecture architecture;
+        private final String adapterLayer;
 
-        private AdaptersLayer(HexagonalArchitecture architecture) {
+        private AdaptersLayer(HexagonalArchitecture architecture, String adapterLayer) {
             this.architecture = architecture;
+            this.adapterLayer = adapterLayer;
         }
 
         AdaptersLayer incoming(String packageName) {
-            architecture.incomingAdapters.add(packageName);
+            architecture.incomingAdapters.add(architecture.basePackage + "." + adapterLayer + "." + packageName + "..");
             return this;
         }
 
         AdaptersLayer outgoing(String packageName) {
-            architecture.outgoingAdapters.add(packageName);
+            architecture.outgoingAdapters.add(architecture.basePackage + "." + adapterLayer + "." + packageName + "..");
             return this;
         }
 

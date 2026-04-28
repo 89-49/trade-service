@@ -18,6 +18,10 @@ class DependencyRuleTests {
 
                 .withDomainLayer("domain")
 
+                .withAdaptersLayer("presentation")
+                .incoming("controller")
+                .and()
+
                 .withAdaptersLayer("infrastructure.adapter")
                 .outgoing("persistence")
                 .and()

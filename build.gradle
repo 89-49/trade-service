@@ -43,7 +43,7 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 
     // common 모듈 의존성
-    implementation 'org.pgsg:common:0.0.1-SNAPSHOT'
+    implementation 'org.pgsg:common:0.1.0-SNAPSHOT'
 }
 
 dependencyManagement {

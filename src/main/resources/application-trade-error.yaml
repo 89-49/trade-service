@@ -1,0 +1,97 @@
+error:
+  configs:
+    # Key 자체를 하나의 평면화된 문자열로 취급
+    "[trade.validation.traded-item-id.required]":
+      code: "T001"
+      message: "productId는 필수입니다."
+      status: 400
+    "[trade.validation.traded-item-name.required]":
+      code: "T002"
+      message: "productName은 필수입니다."
+      status: 400
+    "[trade.validation.traded-item-name.length-exceeded]":
+      code: "T003"
+      message: "productName은 255자 이하이어야 합니다."
+      status: 400
+    "[trade.validation.traded-item-price.required]":
+      code: "T004"
+      message: "productPrice는 필수입니다."
+      status: 400
+    "[trade.validation.traded-item-price.invalid-range]":
+      code: "T005"
+      message: "productPrice는 0보다 커야 합니다."
+      status: 400
+
+    # Buyer
+    "[trade.validation.buyer-id.required]":
+      code: "T006"
+      message: "buyerId는 필수입니다."
+      status: 400
+    "[trade.validation.buyer-name.required]":
+      code: "T007"
+      message: "buyerName은 필수입니다."
+      status: 400
+    "[trade.validation.buyer-name.length-exceeded]":
+      code: "T008"
+      message: "buyerName은 255자 이하이어야 합니다."
+      status: 400
+
+    # Seller
+    "[trade.validation.seller-id.required]":
+      code: "T009"
+      message: "sellerId는 필수입니다."
+      status: 400
+    "[trade.validation.seller-name.required]":
+      code: "T010"
+      message: "sellerName은 필수입니다."
+      status: 400
+    "[trade.validation.seller-name.length-exceeded]":
+      code: "T011"
+      message: "sellerName은 255자 이하이어야 합니다."
+      status: 400
+
+    # Participants
+    "[trade.validation.participants.required]":
+      code: "T012"
+      message: "참여자 정보는 필수입니다."
+      status: 400
+    "[trade.validation.participants.same-person]":
+      code: "T013"
+      message: "구매자와 판매자는 같을 수 없습니다."
+      status: 400
+
+    # Trade
+    "[trade.validation.id.required]":
+      code: "T014"
+      message: "id(또는 tradeId)는 필수입니다."
+      status: 400
+    "[trade.validation.new-status.required]":
+      code: "T015"
+      message: "newStatus는 필수입니다."
+      status: 400
+    "[trade.validation.traded-item.required]":
+      code: "T016"
+      message: "상품 정보는 필수입니다."
+      status: 400
+    "[trade.validation.reservation-id.required]":
+      code: "T017"
+      message: "reservationId는 필수입니다."
+      status: 400
+
+    # Cancel
+    "[trade.validation.cancel.canceller-id.required]":
+      code: "T018"
+      message: "취소 주체 ID는 필수입니다."
+      status: 400
+    "[trade.validation.cancel.reason-detail.required]":
+      code: "T019"
+      message: "기타 사유인 경우 상세 사유 입력은 필수입니다."
+      status: 400
+    "[trade.validation.cancel.reason-not-allowed]":
+      code: "T020"
+      message: "해당 주체는 이 취소 사유를 사용할 수 없습니다."
+      status: 400
+    "[trade.validation.cancel.reason-invalid]":
+      code: "T021"
+      message: "유효하지 않은 취소 사유입니다."
+      status: 400

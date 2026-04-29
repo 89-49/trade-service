@@ -6,6 +6,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.pgsg.trade.domain.exception.TradeDomainValidationException;
+import org.pgsg.trade.domain.exception.TradeErrorCode;
 
 import java.util.UUID;
 
@@ -47,7 +48,9 @@ class TradeParticipantsTest {
     @DisplayName("실패: buyer_id가 null이면 예외가 발생한다.")
     void createTradeParticipants_NullBuyerId_ThrowsException() {
         assertThatThrownBy(() -> TradeParticipants.of(null, VALID_BUYER_NAME, VALID_SELLER_ID, VALID_SELLER_NAME))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.BUYER_ID_REQUIRED);
     }
 
     @ParameterizedTest
@@ -56,7 +59,9 @@ class TradeParticipantsTest {
     @DisplayName("실패: buyer_name이 null, 빈 문자열, 혹은 공백으로만 이루어져 있으면 예외가 발생한다.")
     void createTradeParticipants_InvalidBuyerName_ThrowsException(String invalidName) {
         assertThatThrownBy(() -> TradeParticipants.of(VALID_BUYER_ID, invalidName, VALID_SELLER_ID, VALID_SELLER_NAME))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.BUYER_NAME_REQUIRED);
     }
 
     @Test
@@ -65,14 +70,18 @@ class TradeParticipantsTest {
         String longName = "A".repeat(256);
 
         assertThatThrownBy(() -> TradeParticipants.of(VALID_BUYER_ID, longName, VALID_SELLER_ID, VALID_SELLER_NAME))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.BUYER_NAME_LENGTH_EXCEEDED);
     }
 
     @Test
     @DisplayName("실패: seller_id가 null이면 예외가 발생한다.")
     void createTradeParticipants_NullSellerId_ThrowsException() {
         assertThatThrownBy(() -> TradeParticipants.of(VALID_BUYER_ID, VALID_BUYER_NAME, null, VALID_SELLER_NAME))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.SELLER_ID_REQUIRED);
     }
 
     @ParameterizedTest
@@ -81,7 +90,9 @@ class TradeParticipantsTest {
     @DisplayName("실패: seller_name이 null, 빈 문자열, 혹은 공백으로만 이루어져 있으면 예외가 발생한다.")
     void createTradeParticipants_InvalidSellerName_ThrowsException(String invalidName) {
         assertThatThrownBy(() -> TradeParticipants.of(VALID_BUYER_ID, VALID_BUYER_NAME, VALID_SELLER_ID, invalidName))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.SELLER_NAME_REQUIRED);
     }
 
     @Test
@@ -90,7 +101,9 @@ class TradeParticipantsTest {
         String longName = "A".repeat(256);
 
         assertThatThrownBy(() -> TradeParticipants.of(VALID_BUYER_ID, VALID_BUYER_NAME, VALID_SELLER_ID, longName))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.SELLER_NAME_LENGTH_EXCEEDED);
     }
 
     @Test
@@ -99,6 +112,8 @@ class TradeParticipantsTest {
         UUID sameId = UUID.randomUUID();
 
         assertThatThrownBy(() -> TradeParticipants.of(sameId, VALID_BUYER_NAME, sameId, VALID_SELLER_NAME))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.PARTICIPANTS_SAME_PERSON);
     }
 }

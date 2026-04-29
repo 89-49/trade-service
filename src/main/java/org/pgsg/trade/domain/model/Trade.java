@@ -23,7 +23,7 @@ public class Trade {
     @Id
     private UUID id;
 
-    @Column(name = "reservation_id", unique = true, nullable = false, updatable = false)
+    @Column(name = "reservation_id", nullable = false, updatable = false)
     private UUID reservationId;
 
     @Enumerated(EnumType.STRING)
@@ -36,11 +36,13 @@ public class Trade {
     @Embedded
     private TradedItem tradedItem;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "buyer_status", length = 20)
-    private String buyerStatus;
+    private ParticipantStatus buyerStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "seller_status", length = 20)
-    private String sellerStatus;
+    private ParticipantStatus sellerStatus;
 
     @Version
     @Column(nullable = false)
@@ -55,7 +57,7 @@ public class Trade {
     private LocalDateTime updatedAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Trade(UUID id, UUID reservationId, TradeStatus status, TradeParticipants participants, TradedItem tradedItem, String buyerStatus, String sellerStatus, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    private Trade(UUID id, UUID reservationId, TradeStatus status, TradeParticipants participants, TradedItem tradedItem, ParticipantStatus buyerStatus, ParticipantStatus sellerStatus, LocalDateTime createdAt, LocalDateTime updatedAt) {
         validateReservationId(reservationId);
         validateParticipants(participants);
         validateTradedItem(tradedItem);

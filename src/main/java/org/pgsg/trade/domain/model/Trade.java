@@ -21,6 +21,7 @@ import java.util.UUID;
 public class Trade {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "reservation_id", unique = true, nullable = false, updatable = false)
@@ -55,7 +56,7 @@ public class Trade {
     private LocalDateTime updatedAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Trade(UUID id, UUID reservationId, TradeStatus status, TradeParticipants participants, TradedItem tradedItem, String buyerStatus, String sellerStatus, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    private Trade(UUID reservationId, TradeStatus status, TradeParticipants participants, TradedItem tradedItem, String buyerStatus, String sellerStatus, LocalDateTime createdAt, LocalDateTime updatedAt) {
         validateReservationId(reservationId);
         validateParticipants(participants);
         validateTradedItem(tradedItem);

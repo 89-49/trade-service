@@ -20,7 +20,7 @@ import java.util.UUID;
 public class TradeHistory {
 
     @Id
-    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "trade_id", nullable = false, updatable = false)
@@ -53,9 +53,9 @@ public class TradeHistory {
     private LocalDateTime createdAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private TradeHistory(UUID id, UUID tradeId, TradeStatus previousStatus, TradeStatus newStatus,
+    private TradeHistory(UUID tradeId, TradeStatus previousStatus, TradeStatus newStatus,
                          CancellerType cancelledBy, UUID cancellerId, CancelReasonType cancelReasonType, String cancelReasonDetail) {
-        validateRequired(id, tradeId, newStatus);
+        validateRequired(tradeId, newStatus);
         validateCancel(cancelledBy, cancellerId, cancelReasonType, cancelReasonDetail);
 
         this.id = id;

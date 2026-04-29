@@ -15,7 +15,7 @@ class TradeErrorCodeTest {
     private ErrorConfigProperties errorConfigProperties;
 
     @Test
-    @DisplayName("성공: TradeErrorCode의 모든 에러 키가 application-error.yaml에 정의되어 있어야 한다.")
+    @DisplayName("성공: TradeErrorCode의 모든 에러 키가 application-trade-error.yaml에 정의되어 있어야 한다.")
     void verifyAllErrorKeysExistInYaml() {
         var configs = errorConfigProperties.getConfigs();
 

@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.pgsg.trade.domain.exception.TradeDomainValidationException;
+import org.pgsg.trade.domain.exception.TradeErrorCode;
 
 import java.util.UUID;
 
@@ -52,40 +53,40 @@ public class TradeParticipants {
                 .build();
     }
 
-    // TODO: 리팩토링 필요 - 검증 로직을 별도의 Validator 클래스로 분리, 에러 메시지 상수화
+    // TODO: 리팩토링 - 검증 로직을 별도의 Validator 클래스로 분리
     private void validateBuyerId(UUID buyerId) {
         if (buyerId == null) {
-            throw new TradeDomainValidationException("buyerId는 필수입니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.BUYER_ID_REQUIRED);
         }
     }
 
     private void validateBuyerName(String buyerName) {
         if (buyerName == null || buyerName.isBlank()) {
-            throw new TradeDomainValidationException("buyerName은 필수입니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.BUYER_NAME_REQUIRED);
         }
         if (buyerName.length() > 255) {
-            throw new TradeDomainValidationException("buyerName은 255자 이하이어야 합니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.BUYER_NAME_LENGTH_EXCEEDED);
         }
     }
 
     private void validateSellerId(UUID sellerId) {
         if (sellerId == null) {
-            throw new TradeDomainValidationException("sellerId는 필수입니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.SELLER_ID_REQUIRED);
         }
     }
 
     private void validateSellerName(String sellerName) {
         if (sellerName == null || sellerName.isBlank()) {
-            throw new TradeDomainValidationException("sellerName은 필수입니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.SELLER_NAME_REQUIRED);
         }
         if (sellerName.length() > 255) {
-            throw new TradeDomainValidationException("sellerName은 255자 이하이어야 합니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.SELLER_NAME_LENGTH_EXCEEDED);
         }
     }
 
     private void validateParticipants(UUID buyerId, UUID sellerId) {
         if (buyerId.equals(sellerId)) {
-            throw new TradeDomainValidationException("구매자와 판매자는 같을 수 없습니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.PARTICIPANTS_SAME_PERSON);
         }
     }
 }

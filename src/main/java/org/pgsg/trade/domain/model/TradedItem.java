@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.pgsg.trade.domain.exception.TradeDomainValidationException;
+import org.pgsg.trade.domain.exception.TradeErrorCode;
 
 import java.util.UUID;
 
@@ -45,28 +46,28 @@ public class TradedItem {
                 .build();
     }
 
-    // TODO: 리팩토링 필요 - 검증 로직을 별도의 Validator 클래스로 분리, 에러 메시지 상수화
+    // TODO: 리팩토링 - 검증 로직을 별도의 Validator 클래스로 분리
     private void validateProductId(UUID productId) {
         if (productId == null) {
-            throw new TradeDomainValidationException("productId는 필수입니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.TRADED_ITEM_ID_REQUIRED);
         }
     }
 
     private void validateProductName(String productName) {
         if (productName == null || productName.isBlank()) {
-            throw new TradeDomainValidationException("productName은 필수입니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.TRADED_ITEM_NAME_REQUIRED);
         }
         if (productName.length() > 255) {
-            throw new TradeDomainValidationException("productName은 255자 이하이어야 합니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.TRADED_ITEM_NAME_LENGTH_EXCEEDED);
         }
     }
 
     private void validateProductPrice(Long productPrice) {
         if (productPrice == null) {
-            throw new TradeDomainValidationException("productPrice는 필수입니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.TRADED_ITEM_PRICE_REQUIRED);
         }
         if (productPrice <= 0) {
-            throw new TradeDomainValidationException("productPrice는 0보다 커야 합니다.");
+            throw new TradeDomainValidationException(TradeErrorCode.TRADED_ITEM_PRICE_INVALID_RANGE);
         }
     }
 }

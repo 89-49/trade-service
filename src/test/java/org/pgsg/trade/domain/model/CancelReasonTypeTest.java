@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.pgsg.trade.domain.exception.TradeDomainValidationException;
+import org.pgsg.trade.domain.exception.TradeErrorCode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,7 +34,9 @@ class CancelReasonTypeTest {
     @DisplayName("실패: 유효하지 않은 문자열이나 null이 주어지면 예외가 발생한다.")
     void from_InvalidString_ThrowsException(String input) {
         assertThatThrownBy(() -> CancelReasonType.from(input))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.CANCEL_REASON_INVALID);
     }
 
     @Test

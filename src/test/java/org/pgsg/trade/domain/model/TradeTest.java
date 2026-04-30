@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.pgsg.trade.domain.exception.TradeDomainValidationException;
+import org.pgsg.trade.domain.exception.TradeErrorCode;
 
 import java.util.UUID;
 
@@ -48,20 +49,26 @@ class TradeTest {
     @DisplayName("실패: 예약 ID가 null이면 예외가 발생한다.")
     void createTrade_NullReservationId_ThrowsException() {
         assertThatThrownBy(() -> Trade.create(null, validParticipants, validTradedItem))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.RESERVATION_ID_REQUIRED);
     }
 
     @Test
     @DisplayName("실패: 참여자 정보(participants)가 null이면 예외가 발생한다.")
     void createTrade_NullParticipants_ThrowsException() {
         assertThatThrownBy(() -> Trade.create(VALID_RESERVATION_ID, null, validTradedItem))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.PARTICIPANTS_REQUIRED);
     }
 
     @Test
     @DisplayName("실패: 상품 정보(tradedItem)가 null이면 예외가 발생한다.")
     void createTrade_NullTradedItem_ThrowsException() {
         assertThatThrownBy(() -> Trade.create(VALID_RESERVATION_ID, validParticipants, null))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADED_ITEM_REQUIRED);
     }
 }

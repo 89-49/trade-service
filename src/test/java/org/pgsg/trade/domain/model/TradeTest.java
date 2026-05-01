@@ -71,4 +71,54 @@ class TradeTest {
                 .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
                 .isEqualTo(TradeErrorCode.TRADED_ITEM_REQUIRED);
     }
+
+    @Test
+    @DisplayName("성공: 구매자와 판매자가 모두 완료하면 거래가 완료된다.")
+    void completeBy_AllParticipantsCompleted_CompletesTrade() {
+        Trade trade = Trade.create(VALID_RESERVATION_ID, validParticipants, validTradedItem);
+
+        boolean completedByBuyer = trade.completeBy(VALID_BUYER_ID);
+        boolean completedBySeller = trade.completeBy(VALID_SELLER_ID);
+
+        assertThat(completedByBuyer).isFalse();
+        assertThat(completedBySeller).isTrue();
+        assertThat(trade.getBuyerStatus()).isEqualTo(ParticipantStatus.COMPLETED);
+        assertThat(trade.getSellerStatus()).isEqualTo(ParticipantStatus.COMPLETED);
+        assertThat(trade.getStatus()).isEqualTo(TradeStatus.COMPLETED);
+    }
+
+    @Test
+    @DisplayName("실패: 거래 참여자가 아닌 사용자가 완료하면 예외가 발생한다.")
+    void completeBy_NotParticipant_ThrowsException() {
+        Trade trade = Trade.create(VALID_RESERVATION_ID, validParticipants, validTradedItem);
+
+        assertThatThrownBy(() -> trade.completeBy(UUID.randomUUID()))
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_PARTICIPANT_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("실패: 완료 사용자 ID가 null이면 예외가 발생한다.")
+    void completeBy_NullParticipantId_ThrowsException() {
+        Trade trade = Trade.create(VALID_RESERVATION_ID, validParticipants, validTradedItem);
+
+        assertThatThrownBy(() -> trade.completeBy(null))
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_PARTICIPANT_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("실패: 이미 완료된 거래를 다시 완료하면 예외가 발생한다.")
+    void completeBy_AlreadyCompletedTrade_ThrowsException() {
+        Trade trade = Trade.create(VALID_RESERVATION_ID, validParticipants, validTradedItem);
+        trade.completeBy(VALID_BUYER_ID);
+        trade.completeBy(VALID_SELLER_ID);
+
+        assertThatThrownBy(() -> trade.completeBy(VALID_BUYER_ID))
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_ALREADY_CLOSED);
+    }
 }

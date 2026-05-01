@@ -34,3 +34,4 @@ topics:
     completed: test-reservation-completed
   trade:
     created: test-trade-created
+    completed: test-trade-completed

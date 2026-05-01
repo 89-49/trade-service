@@ -1,7 +1,10 @@
 package org.pgsg.trade.application.port.out;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.pgsg.trade.application.port.out.persistence.TradeHistoryPersistencePort;
+import org.pgsg.trade.application.port.out.persistence.TradePersistencePort;
 import org.pgsg.trade.domain.model.Trade;
 import org.pgsg.trade.domain.model.TradeHistory;
 import org.pgsg.trade.domain.model.TradeParticipants;
@@ -48,14 +51,16 @@ class PersistencePortIntegrationTest {
 
         // then
         Optional<Trade> foundById = tradePersistencePort.findById(savedTrade.getId());
-        Optional<Trade> foundByReservationId = tradePersistencePort.findByReservationId(savedTrade.getReservationId());
+        List<Trade> foundByReservationId = tradePersistencePort.findByReservationId(savedTrade.getReservationId());
         boolean existsByReservationId = tradePersistencePort.existsByReservationId(savedTrade.getReservationId());
 
         assertAll(
                 () -> assertThat(foundById).isPresent(),
                 () -> assertThat(foundById.get().getId()).isEqualTo(savedTrade.getId()),
-                () -> assertThat(foundByReservationId).isPresent(),
-                () -> assertThat(foundByReservationId.get().getReservationId()).isEqualTo(savedTrade.getReservationId()),
+                () -> {
+                    Assertions.assertNotNull(foundByReservationId);
+                    assertThat(foundByReservationId.getFirst().getReservationId()).isEqualTo(savedTrade.getReservationId());
+                },
                 () -> assertThat(existsByReservationId).isTrue()
         );
     }

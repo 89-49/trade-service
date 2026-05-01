@@ -1,6 +1,5 @@
 package org.pgsg.trade.application.port.out;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.pgsg.trade.application.port.out.persistence.TradeHistoryPersistencePort;
@@ -57,10 +56,10 @@ class PersistencePortIntegrationTest {
         assertAll(
                 () -> assertThat(foundById).isPresent(),
                 () -> assertThat(foundById.get().getId()).isEqualTo(savedTrade.getId()),
-                () -> {
-                    Assertions.assertNotNull(foundByReservationId);
-                    assertThat(foundByReservationId.getFirst().getReservationId()).isEqualTo(savedTrade.getReservationId());
-                },
+                () -> assertThat(foundByReservationId)
+                        .singleElement()
+                        .satisfies(foundTrade ->
+                                assertThat(foundTrade.getReservationId()).isEqualTo(savedTrade.getReservationId())),
                 () -> assertThat(existsByReservationId).isTrue()
         );
     }

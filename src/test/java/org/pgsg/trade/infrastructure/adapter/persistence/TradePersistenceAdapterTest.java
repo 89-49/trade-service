@@ -79,7 +79,8 @@ class TradePersistenceAdapterTest {
 
         // then
         assertAll(
-                () -> assertThat(foundTrade.getFirst()).isEqualTo(trade),
+                () -> assertThat(foundTrade).hasSize(1),
+                () -> assertThat(foundTrade.get(0)).isEqualTo(trade),
                 () -> verify(tradeJpaRepository).findByReservationId(reservationId)
         );
     }

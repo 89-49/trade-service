@@ -37,6 +37,7 @@ public enum TradeErrorCode implements ErrorCode {
     TRADE_NOT_FOUND("trade.not-found"),
     TRADE_ALREADY_CLOSED("trade.already-closed"),
     TRADE_PARTICIPANT_NOT_FOUND("trade.participant.not-found"),
+    TRADE_CONCURRENT_UPDATE_FAILED("trade.concurrent-update-failed"),
 
     // Cancel
     CANCEL_CANCELLER_ID_REQUIRED("trade.validation.cancel.canceller-id.required"),

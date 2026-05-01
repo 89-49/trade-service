@@ -20,6 +20,7 @@ import org.pgsg.trade.domain.model.TradeHistory;
 import org.pgsg.trade.domain.model.TradeParticipants;
 import org.pgsg.trade.domain.model.TradeStatus;
 import org.pgsg.trade.domain.model.TradedItem;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
@@ -30,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -136,6 +138,63 @@ class TradeServiceTest {
                 () -> assertThat(savedHistory.getPreviousStatus()).isEqualTo(TradeStatus.TRADING),
                 () -> assertThat(savedHistory.getNewStatus()).isEqualTo(TradeStatus.COMPLETED)
         );
+    }
+
+    @Test
+    @DisplayName("성공: 거래 완료 저장 중 낙관적 락 충돌이 발생하면 재조회 후 재시도한다.")
+    void completeTrade_OptimisticLockingFailure_RetriesAndPublishesCompletedEvent() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+        Trade staleTrade = createTrade();
+        Trade retriedTrade = createTrade();
+        retriedTrade.completeBy(BUYER_ID);
+
+        when(tradePersistencePort.findById(TRADE_ID))
+                .thenReturn(Optional.of(staleTrade))
+                .thenReturn(Optional.of(retriedTrade));
+        when(tradePersistencePort.save(staleTrade))
+                .thenThrow(new ObjectOptimisticLockingFailureException(Trade.class, TRADE_ID));
+        when(tradePersistencePort.save(retriedTrade)).thenReturn(retriedTrade);
+
+        // when
+        CompleteTradeResult result = tradeService.completeTrade(new CompleteTradeCommand(TRADE_ID, SELLER_ID));
+
+        // then
+        assertAll(
+                () -> assertThat(result.tradeStatus()).isEqualTo(TradeStatus.COMPLETED),
+                () -> assertThat(result.buyerStatus()).isEqualTo(ParticipantStatus.COMPLETED),
+                () -> assertThat(result.sellerStatus()).isEqualTo(ParticipantStatus.COMPLETED),
+                () -> assertThat(result.tradeCompleted()).isTrue(),
+                () -> assertThat(result.eventPublished()).isTrue()
+        );
+        verify(tradePersistencePort, times(2)).findById(TRADE_ID);
+        verify(tradePersistencePort).save(staleTrade);
+        verify(tradePersistencePort).save(retriedTrade);
+        verify(tradeEventPublishPort).publishTradeCompleted(retriedTrade);
+    }
+
+    @Test
+    @DisplayName("실패: 낙관적 락 충돌 재시도를 모두 소진하면 동시 수정 실패 예외가 발생한다.")
+    void completeTrade_OptimisticLockingFailureExhausted_ThrowsException() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+        when(tradePersistencePort.findById(TRADE_ID))
+                .thenReturn(Optional.of(createTrade()))
+                .thenReturn(Optional.of(createTrade()))
+                .thenReturn(Optional.of(createTrade()));
+        when(tradePersistencePort.save(any(Trade.class)))
+                .thenThrow(new ObjectOptimisticLockingFailureException(Trade.class, TRADE_ID));
+
+        // when & then
+        assertThatThrownBy(() -> tradeService.completeTrade(new CompleteTradeCommand(TRADE_ID, BUYER_ID)))
+                .isInstanceOf(TradeServiceException.class)
+                .extracting(e -> ((TradeServiceException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_CONCURRENT_UPDATE_FAILED);
+
+        verify(tradePersistencePort, times(3)).findById(TRADE_ID);
+        verify(tradePersistencePort, times(3)).save(any(Trade.class));
+        verify(tradeHistoryPersistencePort, never()).save(any(TradeHistory.class));
+        verify(tradeEventPublishPort, never()).publishTradeCompleted(any(Trade.class));
     }
 
     @Test

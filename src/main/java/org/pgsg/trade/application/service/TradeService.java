@@ -12,6 +12,7 @@ import org.pgsg.trade.application.port.out.persistence.TradePersistencePort;
 import org.pgsg.trade.domain.exception.TradeErrorCode;
 import org.pgsg.trade.domain.exception.TradeServiceException;
 import org.pgsg.trade.domain.model.*;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @RequiredArgsConstructor
 public class TradeService implements TradeUseCase {
+
+    private static final int COMPLETE_TRADE_MAX_RETRY_COUNT = 3;
 
     private final TradePersistencePort tradePersistencePort;
     private final TradeHistoryPersistencePort tradeHistoryPersistencePort;
@@ -73,6 +76,19 @@ public class TradeService implements TradeUseCase {
             throw new TradeServiceException(TradeErrorCode.TRADE_ID_REQUIRED);
         }
 
+        for (int attempt = 1; attempt <= COMPLETE_TRADE_MAX_RETRY_COUNT; attempt++) {
+            try {
+                return completeTradeWithOptimisticLock(command);
+            } catch (ObjectOptimisticLockingFailureException e) {
+                log.warn("거래 완료 처리 중 낙관적 락 충돌 발생 - tradeId: {}, participantId: {}, attempt: {}/{}",
+                        command.tradeId(), command.participantId(), attempt, COMPLETE_TRADE_MAX_RETRY_COUNT, e);
+            }
+        }
+
+        throw new TradeServiceException(TradeErrorCode.TRADE_CONCURRENT_UPDATE_FAILED);
+    }
+
+    private CompleteTradeResult completeTradeWithOptimisticLock(CompleteTradeCommand command) {
         Trade trade = tradePersistencePort.findById(command.tradeId())
                 .orElseThrow(() -> new TradeServiceException(TradeErrorCode.TRADE_NOT_FOUND));
 

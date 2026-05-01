@@ -6,4 +6,5 @@ public interface TradeEventPublishPort {
 
     void publishTradeCreated(Trade trade);
 
+    void publishTradeCompleted(Trade trade);
 }

@@ -41,6 +41,11 @@ public enum TradeErrorCode implements ErrorCode {
     CANCEL_REASON_NOT_ALLOWED("trade.validation.cancel.reason-not-allowed"),
     CANCEL_REASON_INVALID("trade.validation.cancel.reason-invalid"),
 
+    // Messaging
+    RESERVATION_EVENT_DESERIALIZATION_FAILED("trade.messaging.reservation-event.deserialization-failed"),
+    RESERVATION_EVENT_PROCESS_FAILED("trade.messaging.reservation-event.process-failed"),
+    TRADE_EVENT_PUBLISH_FAILED("trade.messaging.trade-event.publish-failed"),
+
     ;
 
     private final String errorKey;

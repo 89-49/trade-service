@@ -95,3 +95,17 @@ error:
       code: "T021"
       message: "유효하지 않은 취소 사유입니다."
       status: 400
+
+    # Messaging
+    "[trade.messaging.reservation-event.deserialization-failed]":
+      code: "T022"
+      message: "예약 완료 이벤트 형식이 올바르지 않습니다."
+      status: 400
+    "[trade.messaging.reservation-event.process-failed]":
+      code: "T023"
+      message: "예약 완료 이벤트 처리에 실패했습니다."
+      status: 500
+    "[trade.messaging.trade-event.publish-failed]":
+      code: "T024"
+      message: "거래 이벤트 발행 요청에 실패했습니다."
+      status: 500

@@ -39,8 +39,8 @@ class TradeTest {
         assertThat(trade.getTradedItem()).isEqualTo(validTradedItem);
 
         assertThat(trade.getStatus()).isEqualTo(TradeStatus.TRADING);
-        assertThat(trade.getBuyerStatus()).isNull();
-        assertThat(trade.getSellerStatus()).isNull();
+        assertThat(trade.getBuyerStatus()).isEqualTo(ParticipantStatus.TRADING);
+        assertThat(trade.getSellerStatus()).isEqualTo(ParticipantStatus.TRADING);
 
         assertThat(trade.getVersion()).isNull();
     }

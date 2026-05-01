@@ -23,7 +23,7 @@ class CompleteTradeResponseTest {
                 tradeId,
                 TradeStatus.TRADING,
                 ParticipantStatus.COMPLETED,
-                null,
+                ParticipantStatus.TRADING,
                 false,
                 false
         );

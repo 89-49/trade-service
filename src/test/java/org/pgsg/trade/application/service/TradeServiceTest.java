@@ -63,6 +63,22 @@ class TradeServiceTest {
     }
 
     @Test
+    @DisplayName("실패: 거래 생성 command가 null이면 명확한 예외가 발생한다.")
+    void createTrade_NullCommand_ThrowsException() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+
+        // when & then
+        assertThatThrownBy(() -> tradeService.createTrade(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("CreateTradeCommand must not be null");
+
+        verify(tradePersistencePort, never()).save(any(Trade.class));
+        verify(tradeHistoryPersistencePort, never()).save(any(TradeHistory.class));
+        verify(tradeEventPublishPort, never()).publishTradeCreated(any(Trade.class));
+    }
+
+    @Test
     @DisplayName("성공: 구매자만 완료하면 참여자 상태만 저장하고 거래 완료 이벤트는 발행하지 않는다.")
     void completeTrade_OnlyBuyerCompleted_DoesNotPublishCompletedEvent() {
         // given
@@ -80,7 +96,7 @@ class TradeServiceTest {
                 () -> assertThat(result.tradeId()).isEqualTo(TRADE_ID),
                 () -> assertThat(result.tradeStatus()).isEqualTo(TradeStatus.TRADING),
                 () -> assertThat(result.buyerStatus()).isEqualTo(ParticipantStatus.COMPLETED),
-                () -> assertThat(result.sellerStatus()).isNull(),
+                () -> assertThat(result.sellerStatus()).isEqualTo(ParticipantStatus.TRADING),
                 () -> assertThat(result.tradeCompleted()).isFalse(),
                 () -> assertThat(result.eventPublished()).isFalse()
         );
@@ -135,6 +151,23 @@ class TradeServiceTest {
                 .isEqualTo(TradeErrorCode.TRADE_ID_REQUIRED);
 
         verify(tradePersistencePort, never()).findById(any(UUID.class));
+    }
+
+    @Test
+    @DisplayName("실패: 거래 완료 command가 null이면 명확한 예외가 발생한다.")
+    void completeTrade_NullCommand_ThrowsException() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+
+        // when & then
+        assertThatThrownBy(() -> tradeService.completeTrade(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("CompleteTradeCommand must not be null");
+
+        verify(tradePersistencePort, never()).findById(any(UUID.class));
+        verify(tradePersistencePort, never()).save(any(Trade.class));
+        verify(tradeHistoryPersistencePort, never()).save(any(TradeHistory.class));
+        verify(tradeEventPublishPort, never()).publishTradeCompleted(any(Trade.class));
     }
 
     @Test

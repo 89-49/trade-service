@@ -48,7 +48,7 @@ class TradeControllerTest {
                 TRADE_ID,
                 TradeStatus.TRADING,
                 ParticipantStatus.COMPLETED,
-                null,
+                ParticipantStatus.TRADING,
                 false,
                 false
         );

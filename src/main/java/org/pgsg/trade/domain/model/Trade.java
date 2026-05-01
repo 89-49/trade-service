@@ -39,11 +39,11 @@ public class Trade {
     private TradedItem tradedItem;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "buyer_status", length = 20)
+    @Column(name = "buyer_status", length = 20, nullable = false)
     private ParticipantStatus buyerStatus;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "seller_status", length = 20)
+    @Column(name = "seller_status", length = 20, nullable = false)
     private ParticipantStatus sellerStatus;
 
     @Version
@@ -80,6 +80,8 @@ public class Trade {
                 .participants(participants)
                 .tradedItem(tradedItem)
                 .status(TradeStatus.TRADING)
+                .buyerStatus(ParticipantStatus.TRADING)
+                .sellerStatus(ParticipantStatus.TRADING)
                 .build();
     }
 

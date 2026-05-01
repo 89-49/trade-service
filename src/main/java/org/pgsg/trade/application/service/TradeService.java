@@ -27,6 +27,10 @@ public class TradeService implements TradeUseCase {
     @Override
     @Transactional
     public void createTrade(CreateTradeCommand command) {
+        if (command == null) {
+            throw new IllegalArgumentException("CreateTradeCommand must not be null");
+        }
+
         log.info("거래 생성 시작 - reservationId: {}, productId: {}, buyerId: {}, sellerId: {}",
                 command.reservationId(), command.productId(), command.buyerId(), command.sellerId());
 
@@ -59,6 +63,10 @@ public class TradeService implements TradeUseCase {
     @Override
     @Transactional
     public CompleteTradeResult completeTrade(CompleteTradeCommand command) {
+        if (command == null) {
+            throw new IllegalArgumentException("CompleteTradeCommand must not be null");
+        }
+
         log.info("거래 완료 요청 시작 - tradeId: {}, participantId: {}", command.tradeId(), command.participantId());
 
         if (command.tradeId() == null) {

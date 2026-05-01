@@ -6,8 +6,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.pgsg.trade.application.port.in.TradeUseCase;
-import org.pgsg.trade.application.port.out.TradeHistoryPersistencePort;
-import org.pgsg.trade.application.port.out.TradePersistencePort;
+import org.pgsg.trade.application.port.out.event.TradeEventPublishPort;
+import org.pgsg.trade.application.port.out.persistence.TradeHistoryPersistencePort;
+import org.pgsg.trade.application.port.out.persistence.TradePersistencePort;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,11 +22,14 @@ class TradeServiceTest {
     @Mock
     private TradeHistoryPersistencePort tradeHistoryPersistencePort;
 
+    @Mock
+    private TradeEventPublishPort tradeEventPublishPort;
+
     @Test
     @DisplayName("성공: TradeService는 입력 포트인 TradeUseCase를 구현한다.")
     void tradeService_ImplementsTradeUseCase() {
         // given
-        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort);
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
 
         // when & then
         assertThat(tradeService).isInstanceOf(TradeUseCase.class);

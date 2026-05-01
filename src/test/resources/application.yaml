@@ -22,3 +22,15 @@ spring:
   profiles:
     active: test
     include: error, trade-error
+
+  kafka:
+    consumer:
+      group-id: trade-service-test
+    listener:
+      ack-mode: record
+
+topics:
+  reservation:
+    completed: test-reservation-completed
+  trade:
+    created: test-trade-created

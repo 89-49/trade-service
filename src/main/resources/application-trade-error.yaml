@@ -78,15 +78,15 @@ error:
       message: "reservationId는 필수입니다."
       status: 400
     "[trade.not-found]":
-      code: "T018"
+      code: "T028"
       message: "거래를 찾을 수 없습니다."
       status: 404
     "[trade.already-closed]":
-      code: "T019"
+      code: "T029"
       message: "이미 종료된 거래입니다."
       status: 409
     "[trade.participant.not-found]":
-      code: "T020"
+      code: "T030"
       message: "거래 참여자가 아닙니다."
       status: 403
 

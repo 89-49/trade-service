@@ -6,6 +6,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.pgsg.trade.domain.exception.TradeDomainValidationException;
+import org.pgsg.trade.domain.exception.TradeErrorCode;
 
 import java.util.UUID;
 
@@ -30,7 +31,7 @@ class TradedItemTest {
     }
 
     @Test
-    @DisplayName("성공: 상품명이 255자인 경우 TradedItem 생성에 성공한다.")
+    @DisplayName("성공: TradedItem의 Name이 255자인 경우 TradedItem 생성에 성공한다.")
     void createTradedItem_255CharProductName_Success() {
         String longName = "A".repeat(255);
         TradedItem tradedItem = TradedItem.of(VALID_PRODUCT_ID, longName, VALID_PRODUCT_PRICE);
@@ -41,41 +42,51 @@ class TradedItemTest {
     }
 
     @Test
-    @DisplayName("실패: product_id가 null이면 예외가 발생한다.")
+    @DisplayName("실패: TradedItem의 Id가 null이면 예외가 발생한다.")
     void createTradedItem_NullProductId_ThrowsException() {
         assertThatThrownBy(() -> TradedItem.of(null, VALID_PRODUCT_NAME, VALID_PRODUCT_PRICE))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADED_ITEM_ID_REQUIRED);
     }
 
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {" ", "   "})
-    @DisplayName("실패: product_name이 null, 빈 문자열, 혹은 공백으로만 이루어져 있으면 예외가 발생한다.")
+    @DisplayName("실패: TradedItem의 Name이 null, 빈 문자열, 혹은 공백으로만 이루어져 있으면 예외가 발생한다.")
     void createTradedItem_NullOrEmptyProductName_ThrowsException(String invalidName) {
         assertThatThrownBy(() -> TradedItem.of(VALID_PRODUCT_ID, invalidName, VALID_PRODUCT_PRICE))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADED_ITEM_NAME_REQUIRED);
     }
 
     @Test
-    @DisplayName("실패: product_price가 null이면 예외가 발생한다.")
+    @DisplayName("실패: TradedItem의 Price가 null이면 예외가 발생한다.")
     void createTradedItem_NullProductPrice_ThrowsException() {
         assertThatThrownBy(() -> TradedItem.of(VALID_PRODUCT_ID, VALID_PRODUCT_NAME, null))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADED_ITEM_PRICE_REQUIRED);
     }
 
     @Test
-    @DisplayName("실패: product_price가 0 이하면 예외가 발생한다.")
+    @DisplayName("실패: TradedItem의 Price가 0 이하면 예외가 발생한다.")
     void createTradedItem_NegativeOrZeroProductPrice_ThrowsException() {
         assertThatThrownBy(() -> TradedItem.of(VALID_PRODUCT_ID, VALID_PRODUCT_NAME, 0L))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADED_ITEM_PRICE_INVALID_RANGE);
     }
 
     @Test
-    @DisplayName("실패: product_name이 255자보다 길면 예외가 발생한다.")
+    @DisplayName("실패: TradedItem의 Name이 255자보다 길면 예외가 발생한다.")
     void createTradedItem_TooLongProductName_ThrowsException() {
         String longName = "A".repeat(256);
 
         assertThatThrownBy(() -> TradedItem.of(VALID_PRODUCT_ID, longName, VALID_PRODUCT_PRICE))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADED_ITEM_NAME_LENGTH_EXCEEDED);
     }
 }

@@ -3,6 +3,7 @@ package org.pgsg.trade.domain.model;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.pgsg.trade.domain.exception.TradeDomainValidationException;
+import org.pgsg.trade.domain.exception.TradeErrorCode;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,7 +34,7 @@ public enum CancelReasonType {
         return Arrays.stream(values())
                 .filter(type -> type.name().equalsIgnoreCase(name))
                 .findFirst()
-                .orElseThrow(() -> new TradeDomainValidationException("유효하지 않은 취소 사유입니다."));
+                .orElseThrow(() -> new TradeDomainValidationException(TradeErrorCode.CANCEL_REASON_INVALID));
     }
 
     public boolean allowedFor(CancellerType cancellerType) {

@@ -7,6 +7,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.pgsg.trade.domain.exception.TradeDomainValidationException;
+import org.pgsg.trade.domain.exception.TradeErrorCode;
 
 import java.util.UUID;
 
@@ -50,7 +51,9 @@ class TradeHistoryTest {
     void createHistory_NullTradeId_ThrowsException() {
         assertThatThrownBy(() -> TradeHistory.create(
                 null, PREVIOUS_STATUS, NEW_STATUS, null, null, null, null))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_ID_REQUIRED);
     }
 
     @Test
@@ -58,7 +61,9 @@ class TradeHistoryTest {
     void createHistory_NullNewStatus_ThrowsException() {
         assertThatThrownBy(() -> TradeHistory.create(
                 TRADE_ID, PREVIOUS_STATUS, null, null, null, null, null))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_NEW_STATUS_REQUIRED);
     }
 
     @ParameterizedTest
@@ -68,7 +73,9 @@ class TradeHistoryTest {
         assertThatThrownBy(() -> TradeHistory.create(
                 TRADE_ID, PREVIOUS_STATUS, NEW_STATUS,
                 type, null, CancelReasonType.ETC, "상세 사유"))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.CANCEL_CANCELLER_ID_REQUIRED);
     }
 
     @Test
@@ -78,7 +85,9 @@ class TradeHistoryTest {
                 TRADE_ID, PREVIOUS_STATUS, NEW_STATUS,
                 CancellerType.BUYER, UUID.randomUUID(),
                 CancelReasonType.PRODUCT_ISSUE, null))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.CANCEL_REASON_NOT_ALLOWED);
     }
 
     @Test
@@ -88,7 +97,9 @@ class TradeHistoryTest {
                 TRADE_ID, PREVIOUS_STATUS, NEW_STATUS,
                 CancellerType.SELLER, UUID.randomUUID(),
                 CancelReasonType.REFUND_REQUEST, null))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.CANCEL_REASON_NOT_ALLOWED);
     }
 
     @ParameterizedTest
@@ -99,7 +110,9 @@ class TradeHistoryTest {
                 TRADE_ID, PREVIOUS_STATUS, NEW_STATUS,
                 userType, UUID.randomUUID(),
                 CancelReasonType.POLICY_VIOLATION, null))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.CANCEL_REASON_NOT_ALLOWED);
     }
 
     @ParameterizedTest
@@ -111,7 +124,9 @@ class TradeHistoryTest {
                 TRADE_ID, PREVIOUS_STATUS, NEW_STATUS,
                 CancellerType.BUYER, UUID.randomUUID(),
                 CancelReasonType.ETC, invalidDetail))
-                .isInstanceOf(TradeDomainValidationException.class);
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.CANCEL_REASON_DETAIL_REQUIRED);
     }
 
     @Test

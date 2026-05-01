@@ -1,10 +1,15 @@
 package org.pgsg.trade.domain.exception;
 
-// TODO: 추후 Common의 Exception을 상속받도록 수정
-public class TradeDomainValidationException extends RuntimeException{
+import org.pgsg.common.exception.ErrorCode;
 
-    public TradeDomainValidationException(String message) {
-        super(message);
+public class TradeDomainValidationException extends TradeServiceException {
+
+    public TradeDomainValidationException(ErrorCode errorCode) {
+        super(errorCode);
+    }
+
+    public TradeDomainValidationException(ErrorCode errorCode, String field) {
+        super(errorCode, field);
     }
 
 }

@@ -36,8 +36,8 @@ public class TradeEventKafkaProducer implements TradeEventPublishPort {
 
             Events.trigger(new OutboxEvent(
                     trade.getId(),
-                    "TRADE",
                     trade.getId(),
+                    "TRADE",
                     tradeCreatedTopic,
                     event
             ));
@@ -60,8 +60,8 @@ public class TradeEventKafkaProducer implements TradeEventPublishPort {
 
             Events.trigger(new OutboxEvent(
                     correlationId,
-                    "TRADE",
                     trade.getId(),
+                    "TRADE",
                     tradeCompletedTopic,
                     event
             ));

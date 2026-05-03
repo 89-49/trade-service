@@ -13,9 +13,7 @@ import org.pgsg.trade.infrastructure.adapter.persistence.TradeHistoryPersistence
 import org.pgsg.trade.infrastructure.adapter.persistence.TradePersistenceAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 @DataJpaTest
 @Import({
-        PersistencePortIntegrationTest.JpaAuditingTestConfig.class,
         TradePersistenceAdapter.class,
         TradeHistoryPersistenceAdapter.class
 })
@@ -99,10 +96,5 @@ class PersistencePortIntegrationTest {
                 TradeParticipants.of(buyerId, "구매자", sellerId, "판매자"),
                 TradedItem.of(UUID.randomUUID(), "상품", 10000L)
         );
-    }
-
-    @TestConfiguration
-    @EnableJpaAuditing
-    static class JpaAuditingTestConfig {
     }
 }

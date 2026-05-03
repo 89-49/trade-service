@@ -44,7 +44,7 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
 
     // common 모듈 의존성
-    implementation 'org.pgsg:common:0.2.0-SNAPSHOT'
+    implementation 'org.pgsg:common:0.2.6-SNAPSHOT'
 }
 
 dependencyManagement {

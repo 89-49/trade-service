@@ -21,11 +21,11 @@ public class ReservationEventKafkaListener {
     private final ObjectMapper objectMapper;
     private final TradeUseCase tradeUseCase;
 
+    @IdempotentConsumer("trade-service:reservation-completed")
     @KafkaListener(
             topics = "${topics.reservation.completed}",
             groupId = "${spring.kafka.consumer.group-id}"
     )
-    @IdempotentConsumer("trade-service:reservation-completed")
     public void listen(ConsumerRecord<String, String> record) {
         log.info("예약 완료 이벤트 수신 - topic: {}, partition: {}, offset: {}, key: {}",
                 record.topic(), record.partition(), record.offset(), record.key());

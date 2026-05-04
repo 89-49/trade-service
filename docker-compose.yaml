@@ -1,19 +1,27 @@
 services:
-  gateway-server:
+  trade-service:
     container_name: trade-service
     build:
       context: .
       dockerfile: Dockerfile
+      secrets:
+        - gradle_properties
     ports:
-      - "19020:19020"
+      - "19020:8083"
     environment:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_DATABASE=${DB_DATABASE}
-      - EUREKA_SERVER=${EUREKA_SERVER}
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL}
+      - TRUST_STORE_PASSWORD=${TRUST_STORE_PASSWORD}
+      - SPRING_KAFKA_SSL_TRUST_STORE_LOCATION=file:/app/ssl/kafka.server.truststore.jks
     networks:
       - pgsg-network
 
 networks:
   pgsg-network:
     external: true
+
+secrets:
+  gradle_properties:
+    file: ${HOME}/.gradle/gradle.properties

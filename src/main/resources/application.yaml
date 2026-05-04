@@ -9,3 +9,7 @@ spring:
 
   config:
     import: configserver:http://34.50.50.170:13100
+
+logging:
+  level:
+    org.springframework.kafka.listener.KafkaMessageListenerContainer: INFO

@@ -77,21 +77,51 @@ error:
       code: "T017"
       message: "reservationId는 필수입니다."
       status: 400
+    "[trade.not-found]":
+      code: "T028"
+      message: "거래를 찾을 수 없습니다."
+      status: 404
+    "[trade.already-closed]":
+      code: "T029"
+      message: "이미 종료된 거래입니다."
+      status: 409
+    "[trade.participant.not-found]":
+      code: "T030"
+      message: "거래 참여자가 아닙니다."
+      status: 403
+    "[trade.concurrent-update-failed]":
+      code: "T031"
+      message: "동시 거래 완료 요청으로 인해 처리에 실패했습니다. 다시 시도해주세요."
+      status: 409
 
     # Cancel
     "[trade.validation.cancel.canceller-id.required]":
-      code: "T018"
+      code: "T021"
       message: "취소 주체 ID는 필수입니다."
       status: 400
     "[trade.validation.cancel.reason-detail.required]":
-      code: "T019"
+      code: "T022"
       message: "기타 사유인 경우 상세 사유 입력은 필수입니다."
       status: 400
     "[trade.validation.cancel.reason-not-allowed]":
-      code: "T020"
+      code: "T023"
       message: "해당 주체는 이 취소 사유를 사용할 수 없습니다."
       status: 400
     "[trade.validation.cancel.reason-invalid]":
-      code: "T021"
+      code: "T024"
       message: "유효하지 않은 취소 사유입니다."
       status: 400
+
+    # Messaging
+    "[trade.messaging.reservation-event.deserialization-failed]":
+      code: "T025"
+      message: "예약 완료 이벤트 형식이 올바르지 않습니다."
+      status: 400
+    "[trade.messaging.reservation-event.process-failed]":
+      code: "T026"
+      message: "예약 완료 이벤트 처리에 실패했습니다."
+      status: 500
+    "[trade.messaging.trade-event.publish-failed]":
+      code: "T027"
+      message: "거래 이벤트 발행 요청에 실패했습니다."
+      status: 500

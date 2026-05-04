@@ -25,7 +25,7 @@ public class Trade {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "reservation_id", unique = true, nullable = false, updatable = false)
+    @Column(name = "reservation_id", nullable = false, updatable = false)
     private UUID reservationId;
 
     @Enumerated(EnumType.STRING)
@@ -38,11 +38,13 @@ public class Trade {
     @Embedded
     private TradedItem tradedItem;
 
-    @Column(name = "buyer_status", length = 20)
-    private String buyerStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "buyer_status", length = 20, nullable = false)
+    private ParticipantStatus buyerStatus;
 
-    @Column(name = "seller_status", length = 20)
-    private String sellerStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "seller_status", length = 20, nullable = false)
+    private ParticipantStatus sellerStatus;
 
     @Version
     @Column(nullable = false)
@@ -57,7 +59,7 @@ public class Trade {
     private LocalDateTime updatedAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Trade(UUID reservationId, TradeStatus status, TradeParticipants participants, TradedItem tradedItem, String buyerStatus, String sellerStatus, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    private Trade(UUID reservationId, TradeStatus status, TradeParticipants participants, TradedItem tradedItem, ParticipantStatus buyerStatus, ParticipantStatus sellerStatus, LocalDateTime createdAt, LocalDateTime updatedAt) {
         validateReservationId(reservationId);
         validateParticipants(participants);
         validateTradedItem(tradedItem);
@@ -78,7 +80,32 @@ public class Trade {
                 .participants(participants)
                 .tradedItem(tradedItem)
                 .status(TradeStatus.TRADING)
+                .buyerStatus(ParticipantStatus.TRADING)
+                .sellerStatus(ParticipantStatus.TRADING)
                 .build();
+    }
+
+    public boolean completeBy(UUID participantId) {
+        validateParticipantId(participantId);
+
+        if (status == TradeStatus.CANCELLED || status == TradeStatus.COMPLETED) {
+            throw new TradeDomainValidationException(TradeErrorCode.TRADE_ALREADY_CLOSED);
+        }
+
+        if (participants.getBuyerId().equals(participantId)) {
+            buyerStatus = ParticipantStatus.COMPLETED;
+        } else if (participants.getSellerId().equals(participantId)) {
+            sellerStatus = ParticipantStatus.COMPLETED;
+        } else {
+            throw new TradeDomainValidationException(TradeErrorCode.TRADE_PARTICIPANT_NOT_FOUND);
+        }
+
+        if (buyerStatus == ParticipantStatus.COMPLETED && sellerStatus == ParticipantStatus.COMPLETED) {
+            status = TradeStatus.COMPLETED;
+            return true;
+        }
+
+        return false;
     }
 
     // TODO: 리팩토링 - 검증 로직을 별도의 Validator 클래스로 분리
@@ -97,6 +124,12 @@ public class Trade {
     private static void validateTradedItem(TradedItem tradedItem) {
         if (tradedItem == null) {
             throw new TradeDomainValidationException(TradeErrorCode.TRADED_ITEM_REQUIRED);
+        }
+    }
+
+    private static void validateParticipantId(UUID participantId) {
+        if (participantId == null) {
+            throw new TradeDomainValidationException(TradeErrorCode.TRADE_PARTICIPANT_NOT_FOUND);
         }
     }
 }

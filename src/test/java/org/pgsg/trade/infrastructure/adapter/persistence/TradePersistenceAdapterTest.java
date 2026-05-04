@@ -11,6 +11,7 @@ import org.pgsg.trade.domain.model.TradeParticipants;
 import org.pgsg.trade.domain.model.TradedItem;
 import org.pgsg.trade.infrastructure.persistence.repository.TradeJpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -71,14 +72,15 @@ class TradePersistenceAdapterTest {
         // given
         Trade trade = createTrade();
         UUID reservationId = trade.getReservationId();
-        when(tradeJpaRepository.findByReservationId(reservationId)).thenReturn(Optional.of(trade));
+        when(tradeJpaRepository.findByReservationId(reservationId)).thenReturn(List.of(trade));
 
         // when
-        Optional<Trade> foundTrade = adapter.findByReservationId(reservationId);
+        List<Trade> foundTrade = adapter.findByReservationId(reservationId);
 
         // then
         assertAll(
-                () -> assertThat(foundTrade).containsSame(trade),
+                () -> assertThat(foundTrade).hasSize(1),
+                () -> assertThat(foundTrade.get(0)).isEqualTo(trade),
                 () -> verify(tradeJpaRepository).findByReservationId(reservationId)
         );
     }

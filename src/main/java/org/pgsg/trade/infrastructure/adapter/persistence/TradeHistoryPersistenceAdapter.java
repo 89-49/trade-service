@@ -1,7 +1,7 @@
 package org.pgsg.trade.infrastructure.adapter.persistence;
 
 import lombok.RequiredArgsConstructor;
-import org.pgsg.trade.application.port.out.TradeHistoryPersistencePort;
+import org.pgsg.trade.application.port.out.persistence.TradeHistoryPersistencePort;
 import org.pgsg.trade.domain.model.TradeHistory;
 import org.pgsg.trade.infrastructure.persistence.repository.TradeHistoryJpaRepository;
 import org.springframework.stereotype.Repository;

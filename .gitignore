@@ -219,4 +219,7 @@ gradle-app.setting
 
 .env
 
+# kafka 인증키
+kafka.server.truststore.jks
+
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,java,gradle,intellij+all,visualstudiocode

@@ -23,6 +23,8 @@ class DependencyRuleTests {
                 .and()
 
                 .withAdaptersLayer("infrastructure.adapter")
+                .incoming("messaging.kafka.consumer")
+                .outgoing("messaging.kafka.producer")
                 .outgoing("persistence")
                 .and()
 

@@ -1,11 +1,12 @@
 package org.pgsg.trade.infrastructure.adapter.persistence;
 
 import lombok.RequiredArgsConstructor;
-import org.pgsg.trade.application.port.out.TradePersistencePort;
+import org.pgsg.trade.application.port.out.persistence.TradePersistencePort;
 import org.pgsg.trade.domain.model.Trade;
 import org.pgsg.trade.infrastructure.persistence.repository.TradeJpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,7 +27,7 @@ public class TradePersistenceAdapter implements TradePersistencePort {
     }
 
     @Override
-    public Optional<Trade> findByReservationId(UUID reservationId) {
+    public List<Trade> findByReservationId(UUID reservationId) {
         return tradeJpaRepository.findByReservationId(reservationId);
     }
 

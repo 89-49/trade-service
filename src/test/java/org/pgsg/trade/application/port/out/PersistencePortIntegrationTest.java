@@ -2,6 +2,8 @@ package org.pgsg.trade.application.port.out;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.pgsg.trade.application.port.out.persistence.TradeHistoryPersistencePort;
+import org.pgsg.trade.application.port.out.persistence.TradePersistencePort;
 import org.pgsg.trade.domain.model.Trade;
 import org.pgsg.trade.domain.model.TradeHistory;
 import org.pgsg.trade.domain.model.TradeParticipants;
@@ -11,9 +13,7 @@ import org.pgsg.trade.infrastructure.adapter.persistence.TradeHistoryPersistence
 import org.pgsg.trade.infrastructure.adapter.persistence.TradePersistenceAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 @DataJpaTest
 @Import({
-        PersistencePortIntegrationTest.JpaAuditingTestConfig.class,
         TradePersistenceAdapter.class,
         TradeHistoryPersistenceAdapter.class
 })
@@ -48,14 +47,16 @@ class PersistencePortIntegrationTest {
 
         // then
         Optional<Trade> foundById = tradePersistencePort.findById(savedTrade.getId());
-        Optional<Trade> foundByReservationId = tradePersistencePort.findByReservationId(savedTrade.getReservationId());
+        List<Trade> foundByReservationId = tradePersistencePort.findByReservationId(savedTrade.getReservationId());
         boolean existsByReservationId = tradePersistencePort.existsByReservationId(savedTrade.getReservationId());
 
         assertAll(
                 () -> assertThat(foundById).isPresent(),
                 () -> assertThat(foundById.get().getId()).isEqualTo(savedTrade.getId()),
-                () -> assertThat(foundByReservationId).isPresent(),
-                () -> assertThat(foundByReservationId.get().getReservationId()).isEqualTo(savedTrade.getReservationId()),
+                () -> assertThat(foundByReservationId)
+                        .singleElement()
+                        .satisfies(foundTrade ->
+                                assertThat(foundTrade.getReservationId()).isEqualTo(savedTrade.getReservationId())),
                 () -> assertThat(existsByReservationId).isTrue()
         );
     }
@@ -95,10 +96,5 @@ class PersistencePortIntegrationTest {
                 TradeParticipants.of(buyerId, "구매자", sellerId, "판매자"),
                 TradedItem.of(UUID.randomUUID(), "상품", 10000L)
         );
-    }
-
-    @TestConfiguration
-    @EnableJpaAuditing
-    static class JpaAuditingTestConfig {
     }
 }

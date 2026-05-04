@@ -1,4 +1,4 @@
-package org.pgsg.trade.application.port.out;
+package org.pgsg.trade.application.port.out.persistence;
 
 import org.pgsg.trade.domain.model.TradeHistory;
 

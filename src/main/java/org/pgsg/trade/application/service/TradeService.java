@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.UUID;
 
@@ -161,7 +162,7 @@ public class TradeService implements TradeUseCase {
             throw new TradeServiceException(TradeErrorCode.TRADE_ID_REQUIRED);
         }
 
-        // TODO: 재시도 로직을 트랜잭션 밖에서 수행하도록 리팩토링 필요
+        // TODO: 실패 시 재시도 로직을 트랜잭션 밖에서 수행하도록 리팩토링 필요
         for (int attempt = 1; attempt <= COMPLETE_TRADE_MAX_RETRY_COUNT; attempt++) {
             try {
                 return cancelTradeWithOptimisticLock(command);
@@ -179,7 +180,7 @@ public class TradeService implements TradeUseCase {
                 .orElseThrow(() -> new TradeServiceException(TradeErrorCode.TRADE_NOT_FOUND));
 
         TradeStatus previousStatus = trade.getStatus();
-        boolean cancelled = trade.cancelBy(command.participantId());
+        trade.cancelBy(command.participantId());
         Trade savedTrade = tradePersistencePort.save(trade);
 
         log.info("거래 참여자 취소 처리 완료 - tradeId: {}, participantId: {}, buyerStatus: {}, sellerStatus: {}",
@@ -192,13 +193,7 @@ public class TradeService implements TradeUseCase {
         TradeHistory savedTradeHistory = tradeHistoryPersistencePort.save(tradeHistory);
         log.info("거래 취소 이력 저장 완료 - tradeId: {}", savedTrade.getId());
 
-
-        // 취소 이벤트 발행 대기 or 발행
-        if (!cancelled) {
-            log.debug("거래 취소 이벤트 발행 대기 - tradeId: {}", savedTrade.getId());
-            return CancelTradeResult.from(savedTrade, savedTradeHistory, false);
-        }
-        tradeEventPublishPort.publishTradeCancelled(trade, savedTradeHistory);
+        tradeEventPublishPort.publishTradeCancelled(savedTrade, savedTradeHistory);
         log.info("거래 취소 이벤트 발행 요청 완료 - tradeId: {}", savedTrade.getId());
         return CancelTradeResult.from(savedTrade, savedTradeHistory, true);
     }

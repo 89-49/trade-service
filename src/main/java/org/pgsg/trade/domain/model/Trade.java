@@ -108,7 +108,7 @@ public class Trade {
         return false;
     }
 
-    public boolean cancelBy(UUID participantId) {
+    public void cancelBy(UUID participantId) {
         validateParticipantId(participantId);
 
         if (status == TradeStatus.CANCELLED || status == TradeStatus.COMPLETED) {
@@ -125,7 +125,6 @@ public class Trade {
 
         // 판매자나 구매자 중 한 명이라도 취소하면 거래 취소(여기까지 실행할 경우 조건 충족)
         status = TradeStatus.CANCELLED;
-        return true;
 	}
 
     // TODO: 리팩토링 - 검증 로직을 별도의 Validator 클래스로 분리

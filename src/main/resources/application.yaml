@@ -2,7 +2,7 @@ spring:
   application:
     name: trade-service
   profiles:
-    active: kafka, topics
+    active: kafka, topics, trade-error
   kafka:
     listener:
       ack-mode: record

@@ -1,0 +1,17 @@
+services:
+  trade-service:
+    container_name: trade-service
+    image: ${AR_IMAGE_PATH}:${IMAGE_TAG}
+    restart: always
+    ports:
+      - "8083:8083"
+    env_file:
+      - .env
+    volumes:
+      - /opt/trade-service/ssl:/app/ssl
+    networks:
+      - pgsg-network
+
+networks:
+  pgsg-network:
+    external: true

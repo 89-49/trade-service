@@ -161,7 +161,7 @@ jobs:
             --command="
               set -e
 
-              echo '$AR_TOKEN' | sudo docker login -u oauth2accesstoken --password-stdin https://$REGISTRY_HOST
+              echo '$AR_TOKEN' | sudo docker login -u oauth2accesstoken --password-stdin $REGISTRY_HOST
 
               sudo mkdir -p $WORK_DIR
               sudo mv /tmp/docker-compose.prod.yaml $WORK_DIR/docker-compose.prod.yaml
@@ -173,11 +173,10 @@ jobs:
                 sudo docker network create pgsg-network
               fi
 
-              sudo -E docker compose -f docker-compose.prod.yaml config > /dev/null
-
               export IMAGE_TAG='$NEW_TAG'
               export AR_IMAGE_PATH='${{ env.AR_IMAGE_PATH }}'
 
+              sudo -E docker compose -f docker-compose.prod.yaml config > /dev/null
               sudo -E docker compose -f docker-compose.prod.yaml pull
               sudo -E docker compose -f docker-compose.prod.yaml up -d
 
@@ -211,7 +210,7 @@ jobs:
             --command="
               set -e
 
-              echo '$AR_TOKEN' | sudo docker login -u oauth2accesstoken --password-stdin https://$REGISTRY_HOST
+              echo '$AR_TOKEN' | sudo docker login -u oauth2accesstoken --password-stdin $REGISTRY_HOST
               cd $WORK_DIR
 
               export IMAGE_TAG='$ROLLBACK_TAG'

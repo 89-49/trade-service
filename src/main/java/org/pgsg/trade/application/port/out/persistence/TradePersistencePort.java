@@ -10,6 +10,8 @@ public interface TradePersistencePort {
 
     Trade save(Trade trade);
 
+    List<Trade> findAll();
+
     Optional<Trade> findById(UUID id);
 
     List<Trade> findByReservationId(UUID reservationId);

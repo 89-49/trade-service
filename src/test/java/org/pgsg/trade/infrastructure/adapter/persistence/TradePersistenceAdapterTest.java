@@ -49,6 +49,23 @@ class TradePersistenceAdapterTest {
     }
 
     @Test
+    @DisplayName("성공: findAll 호출 시 생성일 내림차순 JPA 조회 메서드에 위임한다.")
+    void findAll_DelegatesToJpaRepository() {
+        // given
+        Trade trade = createTrade();
+        when(tradeJpaRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(trade));
+
+        // when
+        List<Trade> foundTrades = adapter.findAll();
+
+        // then
+        assertAll(
+                () -> assertThat(foundTrades).containsExactly(trade),
+                () -> verify(tradeJpaRepository).findAllByOrderByCreatedAtDesc()
+        );
+    }
+
+    @Test
     @DisplayName("성공: findById 호출 시 TradeJpaRepository에 조회를 위임한다.")
     void findById_DelegatesToJpaRepository() {
         // given

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.pgsg.trade.application.dto.command.CompleteTradeCommand;
 import org.pgsg.trade.application.dto.command.CreateTradeCommand;
 import org.pgsg.trade.application.dto.result.CompleteTradeResult;
+import org.pgsg.trade.application.dto.result.TradeResult;
 import org.pgsg.trade.application.port.in.TradeUseCase;
 import org.pgsg.trade.application.port.out.event.TradeEventPublishPort;
 import org.pgsg.trade.application.port.out.persistence.TradeHistoryPersistencePort;
@@ -15,6 +16,9 @@ import org.pgsg.trade.domain.model.*;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -61,6 +65,26 @@ public class TradeService implements TradeUseCase {
 
         tradeEventPublishPort.publishTradeCreated(savedTrade);
         log.info("거래 생성 이벤트 발행 요청 완료 - tradeId: {}", savedTrade.getId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TradeResult> getTrades() {
+        return tradePersistencePort.findAll().stream()
+                .map(TradeResult::from)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TradeResult getTrade(UUID tradeId) {
+        if (tradeId == null) {
+            throw new TradeServiceException(TradeErrorCode.TRADE_ID_REQUIRED);
+        }
+
+        return tradePersistencePort.findById(tradeId)
+                .map(TradeResult::from)
+                .orElseThrow(() -> new TradeServiceException(TradeErrorCode.TRADE_NOT_FOUND));
     }
 
     @Override

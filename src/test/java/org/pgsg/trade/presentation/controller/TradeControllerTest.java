@@ -10,13 +10,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.pgsg.config.security.UserDetailsImpl;
 import org.pgsg.trade.application.dto.command.CompleteTradeCommand;
 import org.pgsg.trade.application.dto.result.CompleteTradeResult;
+import org.pgsg.trade.application.dto.result.TradeResult;
 import org.pgsg.trade.application.port.in.TradeUseCase;
 import org.pgsg.trade.domain.model.ParticipantStatus;
 import org.pgsg.trade.domain.model.TradeStatus;
 import org.pgsg.trade.presentation.dto.response.CompleteTradeResponse;
+import org.pgsg.trade.presentation.dto.response.TradeResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +33,11 @@ import static org.mockito.Mockito.when;
 class TradeControllerTest {
 
     private static final UUID TRADE_ID = UUID.randomUUID();
+    private static final UUID RESERVATION_ID = UUID.randomUUID();
     private static final UUID CURRENT_USER_ID = UUID.randomUUID();
+    private static final UUID BUYER_ID = UUID.randomUUID();
+    private static final UUID SELLER_ID = UUID.randomUUID();
+    private static final UUID PRODUCT_ID = UUID.randomUUID();
 
     @Mock
     private TradeUseCase tradeUseCase;
@@ -37,6 +45,50 @@ class TradeControllerTest {
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("성공: 거래 목록 조회 결과를 응답 DTO로 변환한다.")
+    void getTrades_ReturnsTradeResponses() {
+        // given
+        TradeResult result = createTradeResult();
+        when(tradeUseCase.getTrades()).thenReturn(List.of(result));
+
+        TradeController controller = new TradeController(tradeUseCase);
+
+        // when
+        List<TradeResponse> responses = controller.getTrades();
+
+        // then
+        assertAll(
+                () -> assertThat(responses).hasSize(1),
+                () -> assertThat(responses.get(0).tradeId()).isEqualTo(TRADE_ID),
+                () -> assertThat(responses.get(0).reservationId()).isEqualTo(RESERVATION_ID),
+                () -> assertThat(responses.get(0).productName()).isEqualTo("테스트 상품")
+        );
+        verify(tradeUseCase).getTrades();
+    }
+
+    @Test
+    @DisplayName("성공: 거래 단건 조회 요청을 전달하고 응답 DTO로 변환한다.")
+    void getTrade_ReturnsTradeResponse() {
+        // given
+        TradeResult result = createTradeResult();
+        when(tradeUseCase.getTrade(TRADE_ID)).thenReturn(result);
+
+        TradeController controller = new TradeController(tradeUseCase);
+
+        // when
+        TradeResponse response = controller.getTrade(TRADE_ID);
+
+        // then
+        assertAll(
+                () -> assertThat(response.tradeId()).isEqualTo(TRADE_ID),
+                () -> assertThat(response.buyerId()).isEqualTo(BUYER_ID),
+                () -> assertThat(response.sellerId()).isEqualTo(SELLER_ID),
+                () -> assertThat(response.productPrice()).isEqualTo(10000L)
+        );
+        verify(tradeUseCase).getTrade(TRADE_ID);
     }
 
     @Test
@@ -86,6 +138,25 @@ class TradeControllerTest {
 
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())
+        );
+    }
+
+    private TradeResult createTradeResult() {
+        return new TradeResult(
+                TRADE_ID,
+                RESERVATION_ID,
+                TradeStatus.TRADING,
+                BUYER_ID,
+                "구매자",
+                ParticipantStatus.TRADING,
+                SELLER_ID,
+                "판매자",
+                ParticipantStatus.TRADING,
+                PRODUCT_ID,
+                "테스트 상품",
+                10000L,
+                LocalDateTime.now(),
+                LocalDateTime.now()
         );
     }
 }

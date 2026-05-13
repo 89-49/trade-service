@@ -8,6 +8,8 @@ import java.util.UUID;
 
 public interface TradeJpaRepository extends JpaRepository<Trade, UUID> {
 
+    List<Trade> findAllByOrderByCreatedAtDesc();
+
     List<Trade> findByReservationId(UUID reservationId);
 
     boolean existsByReservationId(UUID reservationId);

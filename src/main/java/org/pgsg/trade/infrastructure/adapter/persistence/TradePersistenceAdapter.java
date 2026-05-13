@@ -22,6 +22,11 @@ public class TradePersistenceAdapter implements TradePersistencePort {
     }
 
     @Override
+    public List<Trade> findAll() {
+        return tradeJpaRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    @Override
     public Optional<Trade> findById(UUID id) {
         return tradeJpaRepository.findById(id);
     }

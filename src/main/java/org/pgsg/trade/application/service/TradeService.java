@@ -20,7 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.UUID;
 
@@ -179,6 +178,12 @@ public class TradeService implements TradeUseCase {
         Trade trade = tradePersistencePort.findById(command.tradeId())
                 .orElseThrow(() -> new TradeServiceException(TradeErrorCode.TRADE_NOT_FOUND));
 
+        CancellerType actualCancellerType = CancellerType.find(
+                command.participantId(),
+                trade.getParticipants().getBuyerId(),
+                trade.getParticipants().getSellerId()
+        );
+
         TradeStatus previousStatus = trade.getStatus();
         trade.cancelBy(command.participantId());
         Trade savedTrade = tradePersistencePort.save(trade);
@@ -188,7 +193,7 @@ public class TradeService implements TradeUseCase {
 
         TradeHistory tradeHistory = TradeHistory.create(
                 savedTrade.getId(), previousStatus, TradeStatus.CANCELLED,
-                command.cancelledBy(), command.participantId(), command.cancelReasonType(), command.cancelReasonDetail()
+                actualCancellerType, command.participantId(), command.cancelReasonType(), command.cancelReasonDetail()
         );
         TradeHistory savedTradeHistory = tradeHistoryPersistencePort.save(tradeHistory);
         log.info("거래 취소 이력 저장 완료 - tradeId: {}", savedTrade.getId());

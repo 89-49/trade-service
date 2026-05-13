@@ -97,8 +97,8 @@ public class TradeEventKafkaProducer implements TradeEventPublishPort {
             log.info("거래 취소 Outbox 이벤트 등록 요청 완료 - tradeId: {}, correlationId: {}, topic: {}",
                     trade.getId(), correlationId, tradeCancelledTopic);
         } catch (RuntimeException e) {
-            log.error("거래 완료 Outbox 이벤트 등록 요청 실패 - tradeId: {}, correlationId: {}, topic: {}",
-                    trade.getId(), correlationId, tradeCompletedTopic, e);
+            log.error("거래 취소 Outbox 이벤트 등록 요청 실패 - tradeId: {}, correlationId: {}, topic: {}",
+                    trade.getId(), correlationId, tradeCancelledTopic, e);
             throw new TradeServiceException(TradeErrorCode.TRADE_EVENT_PUBLISH_FAILED);
         }
     }

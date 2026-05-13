@@ -8,6 +8,8 @@ import org.pgsg.trade.application.port.out.event.TradeEventPublishPort;
 import org.pgsg.trade.domain.exception.TradeErrorCode;
 import org.pgsg.trade.domain.exception.TradeServiceException;
 import org.pgsg.trade.domain.model.Trade;
+import org.pgsg.trade.domain.model.TradeHistory;
+import org.pgsg.trade.infrastructure.adapter.messaging.kafka.event.TradeCancelledEvent;
 import org.pgsg.trade.infrastructure.adapter.messaging.kafka.event.TradeCompletedEvent;
 import org.pgsg.trade.infrastructure.adapter.messaging.kafka.event.TradeCreatedEvent;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +28,8 @@ public class TradeEventKafkaProducer implements TradeEventPublishPort {
     private String tradeCreatedTopic;
     @Value("${topics.trade.completed}")
     private String tradeCompletedTopic;
+    @Value("${topics.trade.cancelled}")
+    private String tradeCancelledTopic;
 
     @Override
     public void publishTradeCreated(Trade trade) {
@@ -74,4 +78,28 @@ public class TradeEventKafkaProducer implements TradeEventPublishPort {
         }
     }
 
+    @Override
+    public void publishTradeCancelled(Trade trade, TradeHistory tradeHistory) {
+        TradeCancelledEvent event = TradeCancelledEvent.create(trade, tradeHistory);
+        UUID correlationId = UUID.nameUUIDFromBytes(("trade-cancelled:" + trade.getId()).getBytes(StandardCharsets.UTF_8));
+
+        try {
+            log.info("거래 취소 Outbox 이벤트 등록 요청 - tradeId: {}, correlationId: {}, topic: {}",
+                    trade.getId(), correlationId, tradeCancelledTopic);
+
+            Events.trigger(new OutboxEvent(
+                    correlationId,
+                    trade.getId(),
+                    "TRADE",
+                    tradeCancelledTopic,
+                    event
+            ));
+            log.info("거래 취소 Outbox 이벤트 등록 요청 완료 - tradeId: {}, correlationId: {}, topic: {}",
+                    trade.getId(), correlationId, tradeCancelledTopic);
+        } catch (RuntimeException e) {
+            log.error("거래 완료 Outbox 이벤트 등록 요청 실패 - tradeId: {}, correlationId: {}, topic: {}",
+                    trade.getId(), correlationId, tradeCompletedTopic, e);
+            throw new TradeServiceException(TradeErrorCode.TRADE_EVENT_PUBLISH_FAILED);
+        }
+    }
 }

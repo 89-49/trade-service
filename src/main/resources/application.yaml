@@ -8,7 +8,26 @@ spring:
       ack-mode: record
 
   config:
-    import: configserver:http://34.50.50.170:13100
+    import:
+      - optional:file:.env[.properties]
+      - optional:configserver:
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: config-server
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    ip-address: ${HOSTNAME:localhost}
+    hostname: ${HOSTNAME:localhost}
+    instance-id: "${HOSTNAME:${spring.application.name}}:${spring.application.name}:${server.port}"
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: "${EUREKA_SERVER_URL:http://34.64.58.121:8761/eureka/,http://34.64.104.174:8761/eureka/}"
 
 logging:
   level:

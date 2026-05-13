@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.pgsg.trade.application.dto.command.CompleteTradeCommand;
 import org.pgsg.trade.application.dto.command.CreateTradeCommand;
 import org.pgsg.trade.application.dto.result.CompleteTradeResult;
+import org.pgsg.trade.application.dto.result.TradeResult;
 import org.pgsg.trade.application.port.in.TradeUseCase;
 import org.pgsg.trade.application.port.out.event.TradeEventPublishPort;
 import org.pgsg.trade.application.port.out.persistence.TradeHistoryPersistencePort;
@@ -12,9 +13,13 @@ import org.pgsg.trade.application.port.out.persistence.TradePersistencePort;
 import org.pgsg.trade.domain.exception.TradeErrorCode;
 import org.pgsg.trade.domain.exception.TradeServiceException;
 import org.pgsg.trade.domain.model.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -61,6 +66,29 @@ public class TradeService implements TradeUseCase {
 
         tradeEventPublishPort.publishTradeCreated(savedTrade);
         log.info("거래 생성 이벤트 발행 요청 완료 - tradeId: {}", savedTrade.getId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TradeResult> getTrades(Pageable pageable) {
+        if (pageable == null) {
+            throw new IllegalArgumentException("Pageable must not be null");
+        }
+
+        return tradePersistencePort.findAll(pageable)
+                .map(TradeResult::from);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TradeResult getTrade(UUID tradeId) {
+        if (tradeId == null) {
+            throw new TradeServiceException(TradeErrorCode.TRADE_ID_REQUIRED);
+        }
+
+        return tradePersistencePort.findById(tradeId)
+                .map(TradeResult::from)
+                .orElseThrow(() -> new TradeServiceException(TradeErrorCode.TRADE_NOT_FOUND));
     }
 
     @Override

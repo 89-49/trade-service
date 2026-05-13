@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.pgsg.trade.application.dto.command.CompleteTradeCommand;
 import org.pgsg.trade.application.dto.result.CompleteTradeResult;
+import org.pgsg.trade.application.dto.result.TradeResult;
 import org.pgsg.trade.application.port.in.TradeUseCase;
 import org.pgsg.trade.application.port.out.event.TradeEventPublishPort;
 import org.pgsg.trade.application.port.out.persistence.TradeHistoryPersistencePort;
@@ -20,9 +21,14 @@ import org.pgsg.trade.domain.model.TradeHistory;
 import org.pgsg.trade.domain.model.TradeParticipants;
 import org.pgsg.trade.domain.model.TradeStatus;
 import org.pgsg.trade.domain.model.TradedItem;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -78,6 +84,92 @@ class TradeServiceTest {
         verify(tradePersistencePort, never()).save(any(Trade.class));
         verify(tradeHistoryPersistencePort, never()).save(any(TradeHistory.class));
         verify(tradeEventPublishPort, never()).publishTradeCreated(any(Trade.class));
+    }
+
+    @Test
+    @DisplayName("성공: 거래 목록을 조회 결과 DTO로 변환한다.")
+    void getTrades_ReturnsTradeResults() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+        Trade trade = createTrade();
+        Pageable pageable = PageRequest.of(0, 20);
+        when(tradePersistencePort.findAll(pageable)).thenReturn(new PageImpl<>(List.of(trade), pageable, 1));
+
+        // when
+        Page<TradeResult> results = tradeService.getTrades(pageable);
+
+        // then
+        assertAll(
+                () -> assertThat(results.getContent()).hasSize(1),
+                () -> assertThat(results.getContent().get(0).tradeId()).isEqualTo(TRADE_ID),
+                () -> assertThat(results.getContent().get(0).reservationId()).isEqualTo(RESERVATION_ID),
+                () -> assertThat(results.getContent().get(0).buyerId()).isEqualTo(BUYER_ID),
+                () -> assertThat(results.getContent().get(0).sellerId()).isEqualTo(SELLER_ID),
+                () -> assertThat(results.getContent().get(0).productId()).isEqualTo(PRODUCT_ID),
+                () -> assertThat(results.getTotalElements()).isEqualTo(1)
+        );
+        verify(tradePersistencePort).findAll(pageable);
+    }
+
+    @Test
+    @DisplayName("실패: 거래 목록 조회 pageable이 null이면 명확한 예외가 발생한다.")
+    void getTrades_NullPageable_ThrowsException() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+
+        // when & then
+        assertThatThrownBy(() -> tradeService.getTrades(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Pageable must not be null");
+    }
+
+    @Test
+    @DisplayName("성공: 거래 단건을 조회 결과 DTO로 변환한다.")
+    void getTrade_ReturnsTradeResult() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+        Trade trade = createTrade();
+        when(tradePersistencePort.findById(TRADE_ID)).thenReturn(Optional.of(trade));
+
+        // when
+        TradeResult result = tradeService.getTrade(TRADE_ID);
+
+        // then
+        assertAll(
+                () -> assertThat(result.tradeId()).isEqualTo(TRADE_ID),
+                () -> assertThat(result.tradeStatus()).isEqualTo(TradeStatus.TRADING),
+                () -> assertThat(result.productName()).isEqualTo("테스트 상품")
+        );
+        verify(tradePersistencePort).findById(TRADE_ID);
+    }
+
+    @Test
+    @DisplayName("실패: 거래 단건 조회 ID가 null이면 거래 ID 필수 예외가 발생한다.")
+    void getTrade_NullTradeId_ThrowsException() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+
+        // when & then
+        assertThatThrownBy(() -> tradeService.getTrade(null))
+                .isInstanceOf(TradeServiceException.class)
+                .extracting(e -> ((TradeServiceException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_ID_REQUIRED);
+
+        verify(tradePersistencePort, never()).findById(any(UUID.class));
+    }
+
+    @Test
+    @DisplayName("실패: 거래 단건 조회 대상이 없으면 거래 없음 예외가 발생한다.")
+    void getTrade_NotFound_ThrowsException() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+        when(tradePersistencePort.findById(TRADE_ID)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> tradeService.getTrade(TRADE_ID))
+                .isInstanceOf(TradeServiceException.class)
+                .extracting(e -> ((TradeServiceException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_NOT_FOUND);
     }
 
     @Test

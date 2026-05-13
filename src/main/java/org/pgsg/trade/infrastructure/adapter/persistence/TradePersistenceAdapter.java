@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.pgsg.trade.application.port.out.persistence.TradePersistencePort;
 import org.pgsg.trade.domain.model.Trade;
 import org.pgsg.trade.infrastructure.persistence.repository.TradeJpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,6 +21,11 @@ public class TradePersistenceAdapter implements TradePersistencePort {
     @Override
     public Trade save(Trade trade) {
         return tradeJpaRepository.save(trade);
+    }
+
+    @Override
+    public Page<Trade> findAll(Pageable pageable) {
+        return tradeJpaRepository.findAllByOrderByCreatedAtDesc(pageable);
     }
 
     @Override

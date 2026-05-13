@@ -10,6 +10,10 @@ import org.pgsg.trade.domain.model.Trade;
 import org.pgsg.trade.domain.model.TradeParticipants;
 import org.pgsg.trade.domain.model.TradedItem;
 import org.pgsg.trade.infrastructure.persistence.repository.TradeJpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +49,26 @@ class TradePersistenceAdapterTest {
         assertAll(
                 () -> assertThat(savedTrade).isSameAs(trade),
                 () -> verify(tradeJpaRepository).save(trade)
+        );
+    }
+
+    @Test
+    @DisplayName("성공: findAll 호출 시 생성일 내림차순 JPA 조회 메서드에 위임한다.")
+    void findAll_DelegatesToJpaRepository() {
+        // given
+        Trade trade = createTrade();
+        Pageable pageable = PageRequest.of(0, 20);
+        when(tradeJpaRepository.findAllByOrderByCreatedAtDesc(pageable))
+                .thenReturn(new PageImpl<>(List.of(trade), pageable, 1));
+
+        // when
+        Page<Trade> foundTrades = adapter.findAll(pageable);
+
+        // then
+        assertAll(
+                () -> assertThat(foundTrades.getContent()).containsExactly(trade),
+                () -> assertThat(foundTrades.getTotalElements()).isEqualTo(1),
+                () -> verify(tradeJpaRepository).findAllByOrderByCreatedAtDesc(pageable)
         );
     }
 

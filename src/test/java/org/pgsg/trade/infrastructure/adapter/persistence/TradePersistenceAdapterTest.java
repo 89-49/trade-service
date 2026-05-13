@@ -10,6 +10,10 @@ import org.pgsg.trade.domain.model.Trade;
 import org.pgsg.trade.domain.model.TradeParticipants;
 import org.pgsg.trade.domain.model.TradedItem;
 import org.pgsg.trade.infrastructure.persistence.repository.TradeJpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -53,15 +57,18 @@ class TradePersistenceAdapterTest {
     void findAll_DelegatesToJpaRepository() {
         // given
         Trade trade = createTrade();
-        when(tradeJpaRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(trade));
+        Pageable pageable = PageRequest.of(0, 20);
+        when(tradeJpaRepository.findAllByOrderByCreatedAtDesc(pageable))
+                .thenReturn(new PageImpl<>(List.of(trade), pageable, 1));
 
         // when
-        List<Trade> foundTrades = adapter.findAll();
+        Page<Trade> foundTrades = adapter.findAll(pageable);
 
         // then
         assertAll(
-                () -> assertThat(foundTrades).containsExactly(trade),
-                () -> verify(tradeJpaRepository).findAllByOrderByCreatedAtDesc()
+                () -> assertThat(foundTrades.getContent()).containsExactly(trade),
+                () -> assertThat(foundTrades.getTotalElements()).isEqualTo(1),
+                () -> verify(tradeJpaRepository).findAllByOrderByCreatedAtDesc(pageable)
         );
     }
 

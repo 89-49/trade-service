@@ -1,6 +1,8 @@
 package org.pgsg.trade.application.port.out.persistence;
 
 import org.pgsg.trade.domain.model.Trade;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,7 +12,7 @@ public interface TradePersistencePort {
 
     Trade save(Trade trade);
 
-    List<Trade> findAll();
+    Page<Trade> findAll(Pageable pageable);
 
     Optional<Trade> findById(UUID id);
 

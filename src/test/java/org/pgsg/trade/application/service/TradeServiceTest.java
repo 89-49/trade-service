@@ -21,6 +21,10 @@ import org.pgsg.trade.domain.model.TradeHistory;
 import org.pgsg.trade.domain.model.TradeParticipants;
 import org.pgsg.trade.domain.model.TradeStatus;
 import org.pgsg.trade.domain.model.TradedItem;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -88,21 +92,35 @@ class TradeServiceTest {
         // given
         TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
         Trade trade = createTrade();
-        when(tradePersistencePort.findAll()).thenReturn(List.of(trade));
+        Pageable pageable = PageRequest.of(0, 20);
+        when(tradePersistencePort.findAll(pageable)).thenReturn(new PageImpl<>(List.of(trade), pageable, 1));
 
         // when
-        List<TradeResult> results = tradeService.getTrades();
+        Page<TradeResult> results = tradeService.getTrades(pageable);
 
         // then
         assertAll(
-                () -> assertThat(results).hasSize(1),
-                () -> assertThat(results.get(0).tradeId()).isEqualTo(TRADE_ID),
-                () -> assertThat(results.get(0).reservationId()).isEqualTo(RESERVATION_ID),
-                () -> assertThat(results.get(0).buyerId()).isEqualTo(BUYER_ID),
-                () -> assertThat(results.get(0).sellerId()).isEqualTo(SELLER_ID),
-                () -> assertThat(results.get(0).productId()).isEqualTo(PRODUCT_ID)
+                () -> assertThat(results.getContent()).hasSize(1),
+                () -> assertThat(results.getContent().get(0).tradeId()).isEqualTo(TRADE_ID),
+                () -> assertThat(results.getContent().get(0).reservationId()).isEqualTo(RESERVATION_ID),
+                () -> assertThat(results.getContent().get(0).buyerId()).isEqualTo(BUYER_ID),
+                () -> assertThat(results.getContent().get(0).sellerId()).isEqualTo(SELLER_ID),
+                () -> assertThat(results.getContent().get(0).productId()).isEqualTo(PRODUCT_ID),
+                () -> assertThat(results.getTotalElements()).isEqualTo(1)
         );
-        verify(tradePersistencePort).findAll();
+        verify(tradePersistencePort).findAll(pageable);
+    }
+
+    @Test
+    @DisplayName("실패: 거래 목록 조회 pageable이 null이면 명확한 예외가 발생한다.")
+    void getTrades_NullPageable_ThrowsException() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+
+        // when & then
+        assertThatThrownBy(() -> tradeService.getTrades(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Pageable must not be null");
     }
 
     @Test

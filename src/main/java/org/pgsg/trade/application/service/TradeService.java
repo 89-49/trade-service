@@ -13,11 +13,12 @@ import org.pgsg.trade.application.port.out.persistence.TradePersistencePort;
 import org.pgsg.trade.domain.exception.TradeErrorCode;
 import org.pgsg.trade.domain.exception.TradeServiceException;
 import org.pgsg.trade.domain.model.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -69,10 +70,13 @@ public class TradeService implements TradeUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TradeResult> getTrades() {
-        return tradePersistencePort.findAll().stream()
-                .map(TradeResult::from)
-                .toList();
+    public Page<TradeResult> getTrades(Pageable pageable) {
+        if (pageable == null) {
+            throw new IllegalArgumentException("Pageable must not be null");
+        }
+
+        return tradePersistencePort.findAll(pageable)
+                .map(TradeResult::from);
     }
 
     @Override

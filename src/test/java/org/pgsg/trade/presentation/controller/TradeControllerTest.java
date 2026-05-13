@@ -16,6 +16,10 @@ import org.pgsg.trade.domain.model.ParticipantStatus;
 import org.pgsg.trade.domain.model.TradeStatus;
 import org.pgsg.trade.presentation.dto.response.CompleteTradeResponse;
 import org.pgsg.trade.presentation.dto.response.TradeResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -24,6 +28,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,21 +57,47 @@ class TradeControllerTest {
     void getTrades_ReturnsTradeResponses() {
         // given
         TradeResult result = createTradeResult();
-        when(tradeUseCase.getTrades()).thenReturn(List.of(result));
+        Pageable pageable = PageRequest.of(0, 20);
+        when(tradeUseCase.getTrades(pageable)).thenReturn(new PageImpl<>(List.of(result), pageable, 1));
 
         TradeController controller = new TradeController(tradeUseCase);
 
         // when
-        List<TradeResponse> responses = controller.getTrades();
+        Page<TradeResponse> responses = controller.getTrades(0, 20);
 
         // then
         assertAll(
-                () -> assertThat(responses).hasSize(1),
-                () -> assertThat(responses.get(0).tradeId()).isEqualTo(TRADE_ID),
-                () -> assertThat(responses.get(0).reservationId()).isEqualTo(RESERVATION_ID),
-                () -> assertThat(responses.get(0).productName()).isEqualTo("테스트 상품")
+                () -> assertThat(responses.getContent()).hasSize(1),
+                () -> assertThat(responses.getContent().get(0).tradeId()).isEqualTo(TRADE_ID),
+                () -> assertThat(responses.getContent().get(0).reservationId()).isEqualTo(RESERVATION_ID),
+                () -> assertThat(responses.getContent().get(0).productName()).isEqualTo("테스트 상품"),
+                () -> assertThat(responses.getTotalElements()).isEqualTo(1)
         );
-        verify(tradeUseCase).getTrades();
+        verify(tradeUseCase).getTrades(pageable);
+    }
+
+    @Test
+    @DisplayName("실패: 거래 목록 조회 page가 음수이면 예외가 발생한다.")
+    void getTrades_NegativePage_ThrowsException() {
+        // given
+        TradeController controller = new TradeController(tradeUseCase);
+
+        // when & then
+        assertThatThrownBy(() -> controller.getTrades(-1, 20))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("page must be greater than or equal to 0");
+    }
+
+    @Test
+    @DisplayName("실패: 거래 목록 조회 size가 최대값을 초과하면 예외가 발생한다.")
+    void getTrades_SizeOverMax_ThrowsException() {
+        // given
+        TradeController controller = new TradeController(tradeUseCase);
+
+        // when & then
+        assertThatThrownBy(() -> controller.getTrades(0, 101))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("size must be between 1 and 100");
     }
 
     @Test

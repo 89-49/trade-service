@@ -9,8 +9,8 @@ spring:
 
   config:
     import:
-      - optional:file:.env[.properties]
-      - optional:configserver:
+      - "optional:file:.env[.properties]"
+      - "optional:configserver:"
   cloud:
     config:
       discovery:

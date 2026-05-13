@@ -2,8 +2,10 @@ package org.pgsg.trade.application.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.pgsg.trade.application.dto.command.CancelTradeCommand;
 import org.pgsg.trade.application.dto.command.CompleteTradeCommand;
 import org.pgsg.trade.application.dto.command.CreateTradeCommand;
+import org.pgsg.trade.application.dto.result.CancelTradeResult;
 import org.pgsg.trade.application.dto.result.CompleteTradeResult;
 import org.pgsg.trade.application.dto.result.TradeResult;
 import org.pgsg.trade.application.port.in.TradeUseCase;
@@ -104,6 +106,7 @@ public class TradeService implements TradeUseCase {
             throw new TradeServiceException(TradeErrorCode.TRADE_ID_REQUIRED);
         }
 
+        // TODO: 실패 시 재시도 로직은 트랜잭션 밖에서 수행하도록 리팩토링 필요
         for (int attempt = 1; attempt <= COMPLETE_TRADE_MAX_RETRY_COUNT; attempt++) {
             try {
                 return completeTradeWithOptimisticLock(command);
@@ -143,5 +146,60 @@ public class TradeService implements TradeUseCase {
         log.info("거래 완료 이벤트 발행 요청 완료 - tradeId: {}", savedTrade.getId());
 
         return CompleteTradeResult.from(savedTrade, true);
+    }
+
+    @Override
+    @Transactional
+    public CancelTradeResult cancelTrade(CancelTradeCommand command) {
+        if (command == null) {
+            throw new IllegalArgumentException("CancelTradeCommand must not be null");
+        }
+
+        log.info("거래 취소 요청 시작 - tradeId: {}, participantId: {}", command.tradeId(), command.participantId());
+
+        if (command.tradeId() == null) {
+            throw new TradeServiceException(TradeErrorCode.TRADE_ID_REQUIRED);
+        }
+
+        // TODO: 재시도 로직을 트랜잭션 밖에서 수행하도록 리팩토링 필요
+        for (int attempt = 1; attempt <= COMPLETE_TRADE_MAX_RETRY_COUNT; attempt++) {
+            try {
+                return cancelTradeWithOptimisticLock(command);
+            } catch (ObjectOptimisticLockingFailureException e) {
+                log.warn("거래 취소 처리 중 낙관적 락 충돌 발생 - tradeId: {}, participantId: {}, attempt: {}/{}",
+                        command.tradeId(), command.participantId(), attempt, COMPLETE_TRADE_MAX_RETRY_COUNT, e);
+            }
+        }
+
+        throw new TradeServiceException(TradeErrorCode.TRADE_CONCURRENT_UPDATE_FAILED);
+    }
+
+    private CancelTradeResult cancelTradeWithOptimisticLock(CancelTradeCommand command) {
+        Trade trade = tradePersistencePort.findById(command.tradeId())
+                .orElseThrow(() -> new TradeServiceException(TradeErrorCode.TRADE_NOT_FOUND));
+
+        TradeStatus previousStatus = trade.getStatus();
+        boolean cancelled = trade.cancelBy(command.participantId());
+        Trade savedTrade = tradePersistencePort.save(trade);
+
+        log.info("거래 참여자 취소 처리 완료 - tradeId: {}, participantId: {}, buyerStatus: {}, sellerStatus: {}",
+                savedTrade.getId(), command.participantId(), savedTrade.getBuyerStatus(), savedTrade.getSellerStatus());
+
+        TradeHistory tradeHistory = TradeHistory.create(
+                savedTrade.getId(), previousStatus, TradeStatus.CANCELLED,
+                command.cancelledBy(), command.participantId(), command.cancelReasonType(), command.cancelReasonDetail()
+        );
+        TradeHistory savedTradeHistory = tradeHistoryPersistencePort.save(tradeHistory);
+        log.info("거래 취소 이력 저장 완료 - tradeId: {}", savedTrade.getId());
+
+
+        // 취소 이벤트 발행 대기 or 발행
+        if (!cancelled) {
+            log.debug("거래 취소 이벤트 발행 대기 - tradeId: {}", savedTrade.getId());
+            return CancelTradeResult.from(savedTrade, savedTradeHistory, false);
+        }
+        tradeEventPublishPort.publishTradeCancelled(trade, savedTradeHistory);
+        log.info("거래 취소 이벤트 발행 요청 완료 - tradeId: {}", savedTrade.getId());
+        return CancelTradeResult.from(savedTrade, savedTradeHistory, true);
     }
 }

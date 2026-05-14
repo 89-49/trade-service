@@ -1,0 +1,14 @@
+server:
+  http_listen_port: 9080
+
+clients:
+  - url: http://xn--vm-3ip-z01x226e:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: trade-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: trade-service
+          __path__: /logs/*.log

@@ -15,6 +15,18 @@ services:
       - EUREKA_SERVER_URL=${EUREKA_SERVER_URL}
       - TRUST_STORE_PASSWORD=${TRUST_STORE_PASSWORD}
       - SPRING_KAFKA_SSL_TRUST_STORE_LOCATION=file:/app/ssl/kafka.server.truststore.jks
+    volumes:
+      - ./logs:/logs
+    networks:
+      - pgsg-network
+
+  promtail:
+    image: grafana/alloy:1.16.1
+    container_name: trade-service-promtail
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/config.yml
+      - ./logs:/logs
+    command: run --config.format=promtail /etc/promtail/config.yml
     networks:
       - pgsg-network
 

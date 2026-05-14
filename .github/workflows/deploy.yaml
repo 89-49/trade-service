@@ -145,6 +145,11 @@ jobs:
             --zone="${{ matrix.zone }}" \
             --project="$GCP_PROJECT" \
             --tunnel-through-iap
+          gcloud compute scp deploy/promtail-config.yml \
+            ${{ matrix.vm }}:/tmp/promtail-config.yml \
+            --zone="${{ matrix.zone }}" \
+            --project="$GCP_PROJECT" \
+            --tunnel-through-iap
 
       - name: Deploy and verify on ${{ matrix.vm }}
         id: deploy_run
@@ -164,7 +169,9 @@ jobs:
               echo '$AR_TOKEN' | sudo docker login -u oauth2accesstoken --password-stdin $REGISTRY_HOST
 
               sudo mkdir -p $WORK_DIR
+              sudo mkdir -p $WORK_DIR/logs
               sudo mv /tmp/docker-compose.prod.yaml $WORK_DIR/docker-compose.prod.yaml
+              sudo mv /tmp/promtail-config.yml $WORK_DIR/promtail-config.yml
               cd $WORK_DIR
 
               test -f .env || { echo '.env not found in $WORK_DIR'; exit 1; }

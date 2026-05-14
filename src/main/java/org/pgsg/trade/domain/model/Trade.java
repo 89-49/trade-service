@@ -108,6 +108,25 @@ public class Trade {
         return false;
     }
 
+    public void cancelBy(UUID participantId) {
+        validateParticipantId(participantId);
+
+        if (status == TradeStatus.CANCELLED || status == TradeStatus.COMPLETED) {
+            throw new TradeDomainValidationException(TradeErrorCode.TRADE_ALREADY_CLOSED);
+        }
+
+        if (participants.getBuyerId().equals(participantId)) {
+            buyerStatus = ParticipantStatus.CANCELLED;
+        } else if (participants.getSellerId().equals(participantId)) {
+            sellerStatus = ParticipantStatus.CANCELLED;
+        } else {
+            throw new TradeDomainValidationException(TradeErrorCode.TRADE_PARTICIPANT_NOT_FOUND);
+        }
+
+        // 판매자나 구매자 중 한 명이라도 취소하면 거래 취소(여기까지 실행할 경우 조건 충족)
+        status = TradeStatus.CANCELLED;
+	}
+
     // TODO: 리팩토링 - 검증 로직을 별도의 Validator 클래스로 분리
     private static void validateReservationId(UUID reservationId) {
         if (reservationId == null) {

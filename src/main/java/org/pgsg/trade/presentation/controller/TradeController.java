@@ -2,18 +2,18 @@ package org.pgsg.trade.presentation.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.pgsg.common.util.SecurityUtil;
+import org.pgsg.trade.application.dto.command.CancelTradeCommand;
 import org.pgsg.trade.application.dto.command.CompleteTradeCommand;
+import org.pgsg.trade.application.dto.result.CancelTradeResult;
 import org.pgsg.trade.application.dto.result.CompleteTradeResult;
 import org.pgsg.trade.application.port.in.TradeUseCase;
+import org.pgsg.trade.presentation.dto.request.CancelTradeRequest;
+import org.pgsg.trade.presentation.dto.response.CancelTradeResponse;
 import org.pgsg.trade.presentation.dto.response.CompleteTradeResponse;
 import org.pgsg.trade.presentation.dto.response.TradeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -51,6 +51,18 @@ public class TradeController {
         CompleteTradeResult result = tradeUseCase.completeTrade(command);
 
         return CompleteTradeResponse.from(result);
+    }
+
+    @PatchMapping("/api/v1/trades/{tradeId}/cancel")
+    public CancelTradeResponse cancelTrade(
+            @PathVariable("tradeId") UUID tradeId,
+            @RequestBody CancelTradeRequest request) {
+        UUID currentUserId = SecurityUtil.getCurrentUserIdOrThrow();
+
+        CancelTradeCommand command = request.toCommand(tradeId, currentUserId);
+        CancelTradeResult result = tradeUseCase.cancelTrade(command);
+
+        return CancelTradeResponse.from(result);
     }
 
     private void validatePageRequest(int page, int size) {

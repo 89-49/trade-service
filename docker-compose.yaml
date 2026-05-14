@@ -21,7 +21,7 @@ services:
       - pgsg-network
 
   promtail:
-    image: grafana/alloy:1.16.1
+    image: grafana/alloy:v1.16.1
     container_name: trade-service-promtail
     volumes:
       - ./promtail-config.yml:/etc/promtail/config.yml

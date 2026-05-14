@@ -14,13 +14,13 @@ services:
       - pgsg-network
 
   promtail:
-    image: grafana/promtail:2.9.1
+    image: grafana/alloy:1.16.1
     container_name: trade-service-promtail
     restart: always
     volumes:
       - /opt/trade-service/promtail-config.yml:/etc/promtail/config.yml
       - /opt/trade-service/logs:/logs
-    command: -config.file=/etc/promtail/config.yml
+    command: run --config.format=promtail /etc/promtail/config.yml
     networks:
       - pgsg-network
 

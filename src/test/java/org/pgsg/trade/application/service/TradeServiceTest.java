@@ -6,7 +6,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.pgsg.trade.application.dto.command.CancelTradeCommand;
 import org.pgsg.trade.application.dto.command.CompleteTradeCommand;
+import org.pgsg.trade.application.dto.result.CancelTradeResult;
 import org.pgsg.trade.application.dto.result.CompleteTradeResult;
 import org.pgsg.trade.application.dto.result.TradeResult;
 import org.pgsg.trade.application.port.in.TradeUseCase;
@@ -336,6 +338,177 @@ class TradeServiceTest {
 
         verify(tradePersistencePort, never()).save(any(Trade.class));
         verify(tradeEventPublishPort, never()).publishTradeCompleted(any(Trade.class));
+    }
+
+    @Test
+    @DisplayName("성공: 구매자가 거래를 취소하면 거래 상태를 변경하고 이력 저장 및 이벤트를 발행한다.")
+    void cancelTrade_BuyerCancels_PublishesCancelledEvent() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+        Trade trade = createTrade();
+        CancelTradeCommand command = new org.pgsg.trade.application.dto.command.CancelTradeCommand(
+                TRADE_ID, BUYER_ID, null, null, "단순 변심"
+        );
+
+        when(tradePersistencePort.findById(TRADE_ID)).thenReturn(Optional.of(trade));
+        when(tradePersistencePort.save(trade)).thenReturn(trade);
+        when(tradeHistoryPersistencePort.save(any(TradeHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        CancelTradeResult result = tradeService.cancelTrade(command);
+
+        // then
+        ArgumentCaptor<TradeHistory> tradeHistoryCaptor = ArgumentCaptor.forClass(TradeHistory.class);
+        verify(tradeHistoryPersistencePort).save(tradeHistoryCaptor.capture());
+        verify(tradeEventPublishPort).publishTradeCancelled(any(Trade.class), any(TradeHistory.class));
+
+        TradeHistory savedHistory = tradeHistoryCaptor.getValue();
+        assertAll(
+                () -> assertThat(result.tradeId()).isEqualTo(TRADE_ID),
+                () -> assertThat(result.tradeStatus()).isEqualTo(TradeStatus.CANCELLED),
+                () -> assertThat(trade.getBuyerStatus()).isEqualTo(ParticipantStatus.CANCELLED),
+                () -> assertThat(savedHistory.getTradeId()).isEqualTo(TRADE_ID),
+                () -> assertThat(savedHistory.getNewStatus()).isEqualTo(TradeStatus.CANCELLED),
+                () -> assertThat(savedHistory.getCancelledBy()).isEqualTo(org.pgsg.trade.domain.model.CancellerType.BUYER)
+        );
+    }
+
+    @Test
+    @DisplayName("성공: 판매자가 거래를 취소하면 거래 상태를 변경하고 이력 저장 및 이벤트를 발행한다.")
+    void cancelTrade_SellerCancels_PublishesCancelledEvent() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+        Trade trade = createTrade();
+        CancelTradeCommand command = new org.pgsg.trade.application.dto.command.CancelTradeCommand(
+                TRADE_ID, SELLER_ID, null, null, "재고 부족"
+        );
+
+        when(tradePersistencePort.findById(TRADE_ID)).thenReturn(Optional.of(trade));
+        when(tradePersistencePort.save(trade)).thenReturn(trade);
+        when(tradeHistoryPersistencePort.save(any(TradeHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        CancelTradeResult result = tradeService.cancelTrade(command);
+
+        // then
+        ArgumentCaptor<TradeHistory> tradeHistoryCaptor = ArgumentCaptor.forClass(TradeHistory.class);
+        verify(tradeHistoryPersistencePort).save(tradeHistoryCaptor.capture());
+        verify(tradeEventPublishPort).publishTradeCancelled(any(Trade.class), any(TradeHistory.class));
+
+        TradeHistory savedHistory = tradeHistoryCaptor.getValue();
+        assertAll(
+                () -> assertThat(result.tradeStatus()).isEqualTo(TradeStatus.CANCELLED),
+                () -> assertThat(trade.getSellerStatus()).isEqualTo(ParticipantStatus.CANCELLED),
+                () -> assertThat(savedHistory.getCancelledBy()).isEqualTo(org.pgsg.trade.domain.model.CancellerType.SELLER)
+        );
+    }
+
+    @Test
+    @DisplayName("성공: 거래 취소 저장 중 낙관적 락 충돌이 발생하면 재조회 후 재시도한다.")
+    void cancelTrade_OptimisticLockingFailure_RetriesAndPublishesCancelledEvent() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+        Trade staleTrade = createTrade();
+        Trade retriedTrade = createTrade();
+        CancelTradeCommand command = new org.pgsg.trade.application.dto.command.CancelTradeCommand(
+                TRADE_ID, BUYER_ID, null, null, "취소"
+        );
+
+        when(tradePersistencePort.findById(TRADE_ID))
+                .thenReturn(Optional.of(staleTrade))
+                .thenReturn(Optional.of(retriedTrade));
+        when(tradePersistencePort.save(staleTrade))
+                .thenThrow(new ObjectOptimisticLockingFailureException(Trade.class, TRADE_ID));
+        when(tradePersistencePort.save(retriedTrade)).thenReturn(retriedTrade);
+        when(tradeHistoryPersistencePort.save(any(TradeHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        CancelTradeResult result = tradeService.cancelTrade(command);
+
+        // then
+        assertAll(
+                () -> assertThat(result.tradeStatus()).isEqualTo(TradeStatus.CANCELLED)
+        );
+        verify(tradePersistencePort, times(2)).findById(TRADE_ID);
+        verify(tradePersistencePort).save(staleTrade);
+        verify(tradePersistencePort).save(retriedTrade);
+        verify(tradeEventPublishPort).publishTradeCancelled(any(Trade.class), any(TradeHistory.class));
+    }
+
+    @Test
+    @DisplayName("실패: 거래 취소 낙관적 락 충돌 재시도를 모두 소진하면 동시 수정 실패 예외가 발생한다.")
+    void cancelTrade_OptimisticLockingFailureExhausted_ThrowsException() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+        CancelTradeCommand command = new org.pgsg.trade.application.dto.command.CancelTradeCommand(
+                TRADE_ID, BUYER_ID, null, null, "취소"
+        );
+
+        when(tradePersistencePort.findById(TRADE_ID))
+                .thenReturn(Optional.of(createTrade()))
+                .thenReturn(Optional.of(createTrade()))
+                .thenReturn(Optional.of(createTrade()));
+        when(tradePersistencePort.save(any(Trade.class)))
+                .thenThrow(new ObjectOptimisticLockingFailureException(Trade.class, TRADE_ID));
+
+        // when & then
+        assertThatThrownBy(() -> tradeService.cancelTrade(command))
+                .isInstanceOf(TradeServiceException.class)
+                .extracting(e -> ((TradeServiceException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_CONCURRENT_UPDATE_FAILED);
+
+        verify(tradePersistencePort, times(3)).findById(TRADE_ID);
+        verify(tradePersistencePort, times(3)).save(any(Trade.class));
+        verify(tradeHistoryPersistencePort, never()).save(any(TradeHistory.class));
+    }
+
+    @Test
+    @DisplayName("실패: 거래 취소 시 거래 ID가 null이면 거래 ID 필수 예외가 발생한다.")
+    void cancelTrade_NullTradeId_ThrowsException() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+        CancelTradeCommand command = new org.pgsg.trade.application.dto.command.CancelTradeCommand(
+                null, BUYER_ID, null, null, "취소"
+        );
+
+        // when & then
+        assertThatThrownBy(() -> tradeService.cancelTrade(command))
+                .isInstanceOf(TradeServiceException.class)
+                .extracting(e -> ((TradeServiceException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_ID_REQUIRED);
+
+        verify(tradePersistencePort, never()).findById(any(UUID.class));
+    }
+
+    @Test
+    @DisplayName("실패: 거래 취소 command가 null이면 명확한 예외가 발생한다.")
+    void cancelTrade_NullCommand_ThrowsException() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+
+        // when & then
+        assertThatThrownBy(() -> tradeService.cancelTrade(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("CancelTradeCommand must not be null");
+    }
+
+    @Test
+    @DisplayName("실패: 거래 취소 대상이 없으면 거래 없음 예외가 발생한다.")
+    void cancelTrade_TradeNotFound_ThrowsException() {
+        // given
+        TradeService tradeService = new TradeService(tradePersistencePort, tradeHistoryPersistencePort, tradeEventPublishPort);
+        CancelTradeCommand command = new org.pgsg.trade.application.dto.command.CancelTradeCommand(
+                TRADE_ID, BUYER_ID, null, null, "취소"
+        );
+        when(tradePersistencePort.findById(TRADE_ID)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> tradeService.cancelTrade(command))
+                .isInstanceOf(TradeServiceException.class)
+                .extracting(e -> ((TradeServiceException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_NOT_FOUND);
+
+        verify(tradePersistencePort, never()).save(any(Trade.class));
     }
 
     private Trade createTrade() {

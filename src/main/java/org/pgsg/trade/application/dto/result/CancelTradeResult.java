@@ -13,15 +13,17 @@ public record CancelTradeResult(
 		TradeStatus tradeStatus,
 		CancelReasonType cancelReasonType,
 		String cancelReasonDetail,
-		LocalDateTime cancelledAt
+		LocalDateTime cancelledAt,
+		boolean eventPublished
 ) {
-	public static CancelTradeResult from(Trade trade, TradeHistory tradeHistory) {
+	public static CancelTradeResult from(Trade trade, TradeHistory tradeHistory, boolean eventPublished) {
 		return new CancelTradeResult(
 				trade.getId(),
 				trade.getStatus(),
 				tradeHistory.getCancelReasonType(),
 				tradeHistory.getCancelReasonDetail(),
-				tradeHistory.getCreatedAt()
+				tradeHistory.getCreatedAt(),
+				eventPublished
 		);
 	}
 }

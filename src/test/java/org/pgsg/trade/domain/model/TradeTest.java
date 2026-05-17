@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 @DisplayName("Trade 도메인 단위 테스트")
 class TradeTest {
@@ -117,6 +118,101 @@ class TradeTest {
         trade.completeBy(VALID_SELLER_ID);
 
         assertThatThrownBy(() -> trade.completeBy(VALID_BUYER_ID))
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_ALREADY_CLOSED);
+    }
+
+    @Test
+    @DisplayName("성공: 구매자가 거래를 취소하면 거래가 취소된다.")
+    void cancelBy_BuyerCancels_CancelsTrade() {
+        Trade trade = Trade.create(VALID_RESERVATION_ID, validParticipants, validTradedItem);
+
+        trade.cancelBy(VALID_BUYER_ID);
+
+        assertThat(trade.getBuyerStatus()).isEqualTo(ParticipantStatus.CANCELLED);
+        assertThat(trade.getSellerStatus()).isEqualTo(ParticipantStatus.TRADING);
+        assertThat(trade.getStatus()).isEqualTo(TradeStatus.CANCELLED);
+    }
+
+    @Test
+    @DisplayName("성공: 판매자가 거래를 취소하면 거래가 취소된다.")
+    void cancelBy_SellerCancels_CancelsTrade() {
+        Trade trade = Trade.create(VALID_RESERVATION_ID, validParticipants, validTradedItem);
+
+        trade.cancelBy(VALID_SELLER_ID);
+
+        assertThat(trade.getBuyerStatus()).isEqualTo(ParticipantStatus.TRADING);
+        assertThat(trade.getSellerStatus()).isEqualTo(ParticipantStatus.CANCELLED);
+        assertThat(trade.getStatus()).isEqualTo(TradeStatus.CANCELLED);
+    }
+
+    @Test
+    @DisplayName("성공: 한 참여자가 완료 시도를 했더라도 다른 참여자가 취소하면 전체 거래는 취소 상태가 된다.")
+    void cancelBy_OneParticipantCancelsWhileOtherIntendsToComplete_CancelsTrade() {
+        // given
+        Trade trade = Trade.create(VALID_RESERVATION_ID, validParticipants, validTradedItem);
+        
+        // 구매자는 완료 시도 (상태는 여전히 TRADING)
+        trade.completeBy(VALID_BUYER_ID);
+        assertThat(trade.getStatus()).isEqualTo(TradeStatus.TRADING);
+        assertThat(trade.getBuyerStatus()).isEqualTo(ParticipantStatus.COMPLETED);
+
+        // when
+        // 판매자가 취소 시도
+        trade.cancelBy(VALID_SELLER_ID);
+
+        // then
+        // 전체 거래 상태는 CANCELLED가 되어야 함
+        assertAll(
+                () -> assertThat(trade.getStatus()).isEqualTo(TradeStatus.CANCELLED),
+                () -> assertThat(trade.getBuyerStatus()).isEqualTo(ParticipantStatus.COMPLETED),
+                () -> assertThat(trade.getSellerStatus()).isEqualTo(ParticipantStatus.CANCELLED)
+        );
+    }
+
+    @Test
+    @DisplayName("실패: 거래 참여자가 아닌 사용자가 취소하면 예외가 발생한다.")
+    void cancelBy_NotParticipant_ThrowsException() {
+        Trade trade = Trade.create(VALID_RESERVATION_ID, validParticipants, validTradedItem);
+
+        assertThatThrownBy(() -> trade.cancelBy(UUID.randomUUID()))
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_PARTICIPANT_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("실패: 취소 사용자 ID가 null이면 예외가 발생한다.")
+    void cancelBy_NullParticipantId_ThrowsException() {
+        Trade trade = Trade.create(VALID_RESERVATION_ID, validParticipants, validTradedItem);
+
+        assertThatThrownBy(() -> trade.cancelBy(null))
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_PARTICIPANT_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("실패: 이미 취소된 거래를 다시 취소하면 예외가 발생한다.")
+    void cancelBy_AlreadyCancelledTrade_ThrowsException() {
+        Trade trade = Trade.create(VALID_RESERVATION_ID, validParticipants, validTradedItem);
+        trade.cancelBy(VALID_BUYER_ID);
+
+        assertThatThrownBy(() -> trade.cancelBy(VALID_SELLER_ID))
+                .isInstanceOf(TradeDomainValidationException.class)
+                .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
+                .isEqualTo(TradeErrorCode.TRADE_ALREADY_CLOSED);
+    }
+
+    @Test
+    @DisplayName("실패: 이미 완료된 거래를 취소하면 예외가 발생한다.")
+    void cancelBy_AlreadyCompletedTrade_ThrowsException() {
+        Trade trade = Trade.create(VALID_RESERVATION_ID, validParticipants, validTradedItem);
+        trade.completeBy(VALID_BUYER_ID);
+        trade.completeBy(VALID_SELLER_ID);
+
+        assertThatThrownBy(() -> trade.cancelBy(VALID_BUYER_ID))
                 .isInstanceOf(TradeDomainValidationException.class)
                 .extracting(e -> ((TradeDomainValidationException) e).getErrorCode())
                 .isEqualTo(TradeErrorCode.TRADE_ALREADY_CLOSED);
